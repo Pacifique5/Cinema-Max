@@ -93,11 +93,11 @@ const Details = () => {
           <View className="flex flex-row justify-between w-1/2">
             <MovieInfo
               label="Budget"
-              value={`$${(movie?.budget ?? 0) / 1_000_000} million`}
+              value={`${(movie?.budget ?? 0) / 1_000_000} million`}
             />
             <MovieInfo
               label="Revenue"
-              value={`$${Math.round(
+              value={`${Math.round(
                 (movie?.revenue ?? 0) / 1_000_000
               )} million`}
             />
