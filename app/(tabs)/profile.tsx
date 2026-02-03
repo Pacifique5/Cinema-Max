@@ -1,16 +1,39 @@
-import { icons } from "@/constants/icons";
-import { View, Text, Image } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
-const Profile = () => {
+export default function Profile() {
   return (
-    <SafeAreaView className="bg-primary flex-1 px-10">
-      <View className="flex justify-center items-center flex-1 flex-col gap-5">
-        <Image source={icons.person} className="size-10" tintColor="#fff" />
-        <Text className="text-gray-500 text-base">Profile</Text>
+    <View style={styles.container}>
+      <View style={styles.content}>
+        <Ionicons name="person-circle" size={80} color="#007AFF" />
+        <Text style={styles.title}>Profile</Text>
+        <Text style={styles.subtitle}>Your movie profile coming soon!</Text>
       </View>
-    </SafeAreaView>
+    </View>
   );
-};
+}
 
-export default Profile;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#ccc',
+    textAlign: 'center',
+  },
+});

@@ -1,122 +1,191 @@
-import { useState, useEffect } from "react";
-import { View, Text, ActivityIndicator, FlatList, Image } from "react-native";
+import { View, Text, StyleSheet, TextInput, FlatList, Image, TouchableOpacity } from "react-native";
+import { useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 
-import { images } from "@/constants/images";
-import { icons } from "@/constants/icons";
+// Same sample data for search
+const SAMPLE_MOVIES = [
+  {
+    id: 1,
+    title: "The Dark Knight",
+    year: "2008",
+    rating: "9.0",
+    poster: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg"
+  },
+  {
+    id: 2,
+    title: "Inception",
+    year: "2010", 
+    rating: "8.8",
+    poster: "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg"
+  },
+  {
+    id: 3,
+    title: "Interstellar",
+    year: "2014",
+    rating: "8.6", 
+    poster: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg"
+  },
+  {
+    id: 4,
+    title: "The Matrix",
+    year: "1999",
+    rating: "8.7",
+    poster: "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
+  },
+  {
+    id: 5,
+    title: "Pulp Fiction", 
+    year: "1994",
+    rating: "8.9",
+    poster: "https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg"
+  },
+  {
+    id: 6,
+    title: "Fight Club",
+    year: "1999", 
+    rating: "8.8",
+    poster: "https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"
+  }
+];
 
-import useFetch from "@/services/usefetch";
-import { fetchMovies } from "@/services/api";
-import { updateSearchCount } from "@/services/appwrite";
+const MovieCard = ({ movie }: { movie: any }) => (
+  <TouchableOpacity style={styles.movieCard}>
+    <Image source={{ uri: movie.poster }} style={styles.poster} />
+    <View style={styles.movieInfo}>
+      <Text style={styles.movieTitle} numberOfLines={1}>{movie.title}</Text>
+      <Text style={styles.movieYear}>{movie.year}</Text>
+      <Text style={styles.movieRating}>⭐ {movie.rating}</Text>
+    </View>
+  </TouchableOpacity>
+);
 
-import SearchBar from "@/components/SearchBar";
-import MovieDisplayCard from "@/components/MovieCard";
-
-const Search = () => {
+export default function Search() {
   const [searchQuery, setSearchQuery] = useState("");
-
-  const {
-    data: movies = [],
-    loading,
-    error,
-    refetch: loadMovies,
-    reset,
-  } = useFetch(() => fetchMovies({ query: searchQuery }), false);
+  const [filteredMovies, setFilteredMovies] = useState(SAMPLE_MOVIES);
 
   const handleSearch = (text: string) => {
     setSearchQuery(text);
+    if (text.trim() === "") {
+      setFilteredMovies(SAMPLE_MOVIES);
+    } else {
+      const filtered = SAMPLE_MOVIES.filter(movie =>
+        movie.title.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredMovies(filtered);
+    }
   };
 
-  // Debounced search effect
-  useEffect(() => {
-    const timeoutId = setTimeout(async () => {
-      if (searchQuery.trim()) {
-        await loadMovies();
-
-        // Call updateSearchCount only if there are results
-        if (movies?.length! > 0 && movies?.[0]) {
-          await updateSearchCount(searchQuery, movies[0]);
-        }
-      } else {
-        reset();
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-
   return (
-    <View className="flex-1 bg-primary">
-      <Image
-        source={images.bg}
-        className="flex-1 absolute w-full z-0"
-        resizeMode="cover"
-      />
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>🔍 Search Movies</Text>
+        
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#ccc" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search for movies..."
+            placeholderTextColor="#ccc"
+            value={searchQuery}
+            onChangeText={handleSearch}
+          />
+        </View>
+      </View>
 
       <FlatList
-        className="px-5"
-        data={movies as Movie[]}
+        data={filteredMovies}
+        renderItem={({ item }) => <MovieCard movie={item} />}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <MovieDisplayCard {...item} />}
-        numColumns={3}
-        columnWrapperStyle={{
-          justifyContent: "flex-start",
-          gap: 16,
-          marginVertical: 16,
-        }}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        ListHeaderComponent={
-          <>
-            <View className="w-full flex-row justify-center mt-20 items-center">
-              <Image source={icons.logo} className="w-12 h-10" />
-            </View>
-
-            <View className="my-5">
-              <SearchBar
-                placeholder="Search for a movie"
-                value={searchQuery}
-                onChangeText={handleSearch}
-              />
-            </View>
-
-            {loading && (
-              <ActivityIndicator
-                size="large"
-                color="#0000ff"
-                className="my-3"
-              />
-            )}
-
-            {error && (
-              <Text className="text-red-500 px-5 my-3">
-                Error: {error.message}
-              </Text>
-            )}
-
-            {!loading &&
-              !error &&
-              searchQuery.trim() &&
-              movies?.length! > 0 && (
-                <Text className="text-xl text-white font-bold">
-                  Search Results for{" "}
-                  <Text className="text-accent">{searchQuery}</Text>
-                </Text>
-              )}
-          </>
-        }
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
         ListEmptyComponent={
-          !loading && !error ? (
-            <View className="mt-10 px-5">
-              <Text className="text-center text-gray-500">
-                {searchQuery.trim()
-                  ? "No movies found"
-                  : "Start typing to search for movies"}
-              </Text>
-            </View>
-          ) : null
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No movies found</Text>
+          </View>
         }
       />
     </View>
   );
-};
+}
 
-export default Search;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  header: {
+    padding: 20,
+    paddingTop: 60,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#111',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 16,
+  },
+  list: {
+    flex: 1,
+  },
+  listContent: {
+    padding: 20,
+  },
+  movieCard: {
+    flexDirection: 'row',
+    backgroundColor: '#111',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 15,
+  },
+  poster: {
+    width: 80,
+    height: 120,
+    borderRadius: 8,
+    marginRight: 15,
+  },
+  movieInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  movieTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 5,
+  },
+  movieYear: {
+    fontSize: 14,
+    color: '#ccc',
+    marginBottom: 5,
+  },
+  movieRating: {
+    fontSize: 14,
+    color: '#ffd700',
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 50,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#ccc',
+  },
+});

@@ -1,118 +1,148 @@
-import {
-  View,
-  Text,
-  ActivityIndicator,
-  ScrollView,
-  Image,
-  FlatList,
-} from "react-native";
-import { useRouter } from "expo-router";
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, FlatList } from "react-native";
+import { useState, useEffect } from "react";
 
-import useFetch from "@/services/usefetch";
-import { fetchMovies } from "@/services/api";
-import { getTrendingMovies } from "@/services/appwrite";
+// Simple movie data - no external API needed
+const SAMPLE_MOVIES = [
+  {
+    id: 1,
+    title: "The Dark Knight",
+    year: "2008",
+    rating: "9.0",
+    poster: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg"
+  },
+  {
+    id: 2,
+    title: "Inception",
+    year: "2010", 
+    rating: "8.8",
+    poster: "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg"
+  },
+  {
+    id: 3,
+    title: "Interstellar",
+    year: "2014",
+    rating: "8.6", 
+    poster: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg"
+  },
+  {
+    id: 4,
+    title: "The Matrix",
+    year: "1999",
+    rating: "8.7",
+    poster: "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
+  },
+  {
+    id: 5,
+    title: "Pulp Fiction", 
+    year: "1994",
+    rating: "8.9",
+    poster: "https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg"
+  },
+  {
+    id: 6,
+    title: "Fight Club",
+    year: "1999", 
+    rating: "8.8",
+    poster: "https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"
+  }
+];
 
-import { icons } from "@/constants/icons";
-import { images } from "@/constants/images";
+const MovieCard = ({ movie }: { movie: any }) => (
+  <TouchableOpacity style={styles.movieCard}>
+    <Image source={{ uri: movie.poster }} style={styles.poster} />
+    <Text style={styles.movieTitle} numberOfLines={1}>{movie.title}</Text>
+    <Text style={styles.movieYear}>{movie.year}</Text>
+    <Text style={styles.movieRating}>⭐ {movie.rating}</Text>
+  </TouchableOpacity>
+);
 
-import SearchBar from "@/components/SearchBar";
-import MovieCard from "@/components/MovieCard";
-import TrendingCard from "@/components/TrendingCard";
-
-const Index = () => {
-  const router = useRouter();
-
-  const {
-    data: trendingMovies,
-    loading: trendingLoading,
-    error: trendingError,
-  } = useFetch(getTrendingMovies);
-
-  const {
-    data: movies,
-    loading: moviesLoading,
-    error: moviesError,
-  } = useFetch(() => fetchMovies({ query: "" }));
-
+export default function Index() {
   return (
-    <View className="flex-1 bg-primary">
-      <Image
-        source={images.bg}
-        className="absolute w-full z-0"
-        resizeMode="cover"
-      />
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>🎬 Movie App</Text>
+          <Text style={styles.headerSubtitle}>Discover amazing movies</Text>
+        </View>
 
-      <ScrollView
-        className="flex-1 px-5"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ minHeight: "100%", paddingBottom: 10 }}
-      >
-        <Image source={icons.logo} className="w-12 h-10 mt-20 mb-5 mx-auto" />
-
-        {moviesLoading || trendingLoading ? (
-          <ActivityIndicator
-            size="large"
-            color="#0000ff"
-            className="mt-10 self-center"
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Popular Movies</Text>
+          <FlatList
+            data={SAMPLE_MOVIES}
+            renderItem={({ item }) => <MovieCard movie={item} />}
+            keyExtractor={(item) => item.id.toString()}
+            numColumns={2}
+            columnWrapperStyle={styles.row}
+            scrollEnabled={false}
           />
-        ) : moviesError || trendingError ? (
-          <Text>Error: {moviesError?.message || trendingError?.message}</Text>
-        ) : (
-          <View className="flex-1 mt-5">
-            <SearchBar
-              onPress={() => {
-                router.push("/search");
-              }}
-              placeholder="Search for a movie"
-            />
-
-            {trendingMovies && (
-              <View className="mt-10">
-                <Text className="text-lg text-white font-bold mb-3">
-                  Trending Movies
-                </Text>
-                <FlatList
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  className="mb-4 mt-3"
-                  data={trendingMovies}
-                  contentContainerStyle={{
-                    gap: 26,
-                  }}
-                  renderItem={({ item, index }) => (
-                    <TrendingCard movie={item} index={index} />
-                  )}
-                  keyExtractor={(item) => item.movie_id.toString()}
-                  ItemSeparatorComponent={() => <View className="w-4" />}
-                />
-              </View>
-            )}
-
-            <>
-              <Text className="text-lg text-white font-bold mt-5 mb-3">
-                Latest Movies
-              </Text>
-
-              <FlatList
-                data={movies}
-                renderItem={({ item }) => <MovieCard {...item} />}
-                keyExtractor={(item) => item.id.toString()}
-                numColumns={3}
-                columnWrapperStyle={{
-                  justifyContent: "flex-start",
-                  gap: 20,
-                  paddingRight: 5,
-                  marginBottom: 10,
-                }}
-                className="mt-2 pb-32"
-                scrollEnabled={false}
-              />
-            </>
-          </View>
-        )}
+        </View>
       </ScrollView>
     </View>
   );
-};
+}
 
-export default Index;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    padding: 20,
+    paddingTop: 60,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 5,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#ccc',
+  },
+  section: {
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 15,
+  },
+  row: {
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  movieCard: {
+    width: '48%',
+    backgroundColor: '#111',
+    borderRadius: 10,
+    padding: 10,
+  },
+  poster: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  movieTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  movieYear: {
+    fontSize: 12,
+    color: '#ccc',
+    marginBottom: 4,
+  },
+  movieRating: {
+    fontSize: 12,
+    color: '#ffd700',
+    fontWeight: 'bold',
+  },
+});
