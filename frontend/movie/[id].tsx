@@ -30,20 +30,25 @@ const MOVIE_DETAILS = {
 export default function MovieDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { user, isGuest, addToFavorites, removeFromFavorites } = useAuth();
+  const { user, isGuest, addToFavorites, removeFromFavorites, getFavorites } = useAuth();
   const [isWatchlisted, setIsWatchlisted] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
   
   // Get movie details (fallback to first movie if not found)
   const movieId = Array.isArray(id) ? id[0] : id;
   const numericId = parseInt(movieId || '1', 10);
   const movie = MOVIE_DETAILS[numericId as keyof typeof MOVIE_DETAILS] || MOVIE_DETAILS[1];
-  
-  // Check if movie is in favorites
-  const isFavorite = user?.favorites?.includes(movieId || '1') || false;
 
   useEffect(() => {
-    // Any initialization logic here
-  }, []);
+    if (user) {
+      checkIfFavorite();
+    }
+  }, [user, movieId]);
+
+  const checkIfFavorite = async () => {
+    const favorites = await getFavorites();
+    setIsFavorite(favorites.includes(movieId || '1'));
+  };
 
   const handleToggleFavorite = async () => {
     if (isGuest) {
@@ -58,12 +63,18 @@ export default function MovieDetailScreen() {
       return;
     }
 
-    if (isFavorite) {
-      await removeFromFavorites(movieId || '1');
-      Alert.alert("Removed", "Movie removed from favorites");
+    const result = isFavorite 
+      ? await removeFromFavorites(movieId || '1')
+      : await addToFavorites(movieId || '1');
+
+    if (result.success) {
+      setIsFavorite(!isFavorite);
+      Alert.alert(
+        isFavorite ? "Removed" : "Added", 
+        isFavorite ? "Movie removed from favorites" : "Movie added to favorites"
+      );
     } else {
-      await addToFavorites(movieId || '1');
-      Alert.alert("Added", "Movie added to favorites");
+      Alert.alert("Error", result.error || "Failed to update favorites");
     }
   };
 

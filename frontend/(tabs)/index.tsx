@@ -134,7 +134,7 @@ const TrendingMovieCard = ({ movie }: { movie: any }) => {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, isGuest } = useAuth();
+  const { user, profile, isGuest } = useAuth();
   const [activeCategory, setActiveCategory] = useState('All');
   
   const categories = ['All', 'Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi'];
@@ -143,8 +143,8 @@ export default function HomeScreen() {
     if (isGuest) {
       return "Welcome, Guest! 👋";
     }
-    if (user) {
-      const firstName = user.name.split(' ')[0]; // Get first name only
+    if (profile) {
+      const firstName = profile.name.split(' ')[0]; // Get first name only
       return `Hello, ${firstName}! 👋`;
     }
     return "Hello, Movie Lover! 👋";
@@ -169,8 +169,8 @@ export default function HomeScreen() {
             style={styles.profileButton}
             onPress={() => router.push('/(tabs)/profile')}
           >
-            {user?.avatar ? (
-              <Image source={{ uri: user.avatar }} style={styles.profileImage} />
+            {profile?.avatar_url ? (
+              <Image source={{ uri: profile.avatar_url }} style={styles.profileImage} />
             ) : (
               <Ionicons name="person-circle" size={32} color="#FF6B6B" />
             )}

@@ -7,10 +7,29 @@ import { useAuth } from "../../contexts/AuthContext";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, isGuest, logout, updateUser, toggleDarkMode } = useAuth();
+  const { user, profile, isGuest, signOut, updateProfile, toggleDarkMode, addToFavorites, removeFromFavorites, getFavorites } = useAuth();
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editName, setEditName] = useState(user?.name || '');
-  const [editEmail, setEditEmail] = useState(user?.email || '');
+  const [editName, setEditName] = useState(profile?.name || '');
+  const [editEmail, setEditEmail] = useState(profile?.email || '');
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (profile) {
+      setEditName(profile.name);
+      setEditEmail(profile.email);
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (user) {
+      loadFavorites();
+    }
+  }, [user]);
+
+  const loadFavorites = async () => {
+    const userFavorites = await getFavorites();
+    setFavorites(userFavorites);
+  };
 
   // Component definitions
   const ProfileStat = ({ icon, label, value, color }: any) => (
@@ -48,7 +67,7 @@ export default function ProfileScreen() {
           text: isGuest ? "Yes" : "Logout", 
           style: "destructive", 
           onPress: async () => {
-            await logout();
+            await signOut();
             router.replace("/");
           }
         }
@@ -57,21 +76,24 @@ export default function ProfileScreen() {
   };
 
   const handleSaveProfile = async () => {
-    if (user && editName.trim()) {
-      await updateUser({ 
+    if (profile && editName.trim()) {
+      const result = await updateProfile({ 
         name: editName.trim(),
         email: editEmail.trim() 
       });
-      setEditModalVisible(false);
-      Alert.alert('Success', 'Profile updated successfully!');
+      
+      if (result.success) {
+        setEditModalVisible(false);
+        Alert.alert('Success', 'Profile updated successfully!');
+      } else {
+        Alert.alert('Error', result.error || 'Failed to update profile');
+      }
     }
   };
 
   const handleToggleDarkMode = async () => {
-    if (user) {
-      await toggleDarkMode();
-      Alert.alert('Success', `Dark mode ${user.darkMode ? 'disabled' : 'enabled'}!`);
-    }
+    await toggleDarkMode();
+    Alert.alert('Success', `Dark mode ${profile?.dark_mode ? 'disabled' : 'enabled'}!`);
   };
 
   // Guest user display
@@ -177,14 +199,14 @@ export default function ProfileScreen() {
         {/* User Info */}
         <View style={styles.userSection}>
           <View style={styles.avatarContainer}>
-            <Image source={{ uri: user?.avatar }} style={styles.avatar} />
+            <Image source={{ uri: profile?.avatar_url }} style={styles.avatar} />
             <TouchableOpacity style={styles.editAvatarButton}>
               <Ionicons name="camera" size={16} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.userName}>{user?.name}</Text>
-          <Text style={styles.userEmail}>{user?.email}</Text>
-          <Text style={styles.memberSince}>Member since {user?.memberSince}</Text>
+          <Text style={styles.userName}>{profile?.name}</Text>
+          <Text style={styles.userEmail}>{profile?.email}</Text>
+          <Text style={styles.memberSince}>Member since {profile?.member_since ? new Date(profile.member_since).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently'}</Text>
           
           <TouchableOpacity 
             style={styles.editProfileButton}
@@ -199,19 +221,19 @@ export default function ProfileScreen() {
           <ProfileStat 
             icon="play-circle" 
             label="Watched" 
-            value={user?.watchedMovies || 0} 
+            value={0} 
             color="#4CAF50"
           />
           <ProfileStat 
             icon="heart" 
             label="Favorites" 
-            value={user?.favorites?.length || 0} 
+            value={favorites.length} 
             color="#FF6B6B"
           />
           <ProfileStat 
             icon="download" 
             label="Downloads" 
-            value={user?.downloads?.length || 0} 
+            value={0} 
             color="#2196F3"
           />
         </View>
@@ -223,7 +245,7 @@ export default function ProfileScreen() {
             <MenuOption
               icon="heart-outline"
               title="My Favorites"
-              subtitle={`${user?.favorites?.length || 0} movies`}
+              subtitle={`${favorites.length} movies`}
               onPress={() => Alert.alert("Favorites", "Your favorite movies will be displayed here")}
             />
             <MenuOption
@@ -235,7 +257,7 @@ export default function ProfileScreen() {
             <MenuOption
               icon="download-outline"
               title="Downloads"
-              subtitle={`${user?.downloads?.length || 0} movies`}
+              subtitle="0 movies"
               onPress={() => Alert.alert("Downloads", "Your downloaded movies will be displayed here")}
             />
             <MenuOption
@@ -265,7 +287,7 @@ export default function ProfileScreen() {
             <MenuOption
               icon="moon-outline"
               title="Dark Mode"
-              subtitle={user?.darkMode ? "Enabled" : "Disabled"}
+              subtitle={profile?.dark_mode ? "Enabled" : "Disabled"}
               onPress={handleToggleDarkMode}
             />
             <MenuOption

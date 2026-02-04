@@ -7,7 +7,7 @@ import { useAuth } from "../../contexts/AuthContext";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,13 +21,13 @@ export default function LoginScreen() {
     
     setIsLoading(true);
     try {
-      const success = await login(email, password);
-      if (success) {
+      const result = await signIn(email, password);
+      if (result.success) {
         Alert.alert('Success', 'Welcome back!', [
           { text: 'OK', onPress: () => router.replace('/(tabs)') }
         ]);
       } else {
-        Alert.alert('Error', 'Invalid email or password. Please try again.');
+        Alert.alert('Error', result.error || 'Invalid email or password. Please try again.');
       }
     } catch (error) {
       Alert.alert('Error', 'Something went wrong. Please try again.');

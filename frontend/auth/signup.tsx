@@ -7,7 +7,7 @@ import { useAuth } from "../../contexts/AuthContext";
 
 export default function SignupScreen() {
   const router = useRouter();
-  const { signup } = useAuth();
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -44,27 +44,14 @@ export default function SignupScreen() {
     setIsLoading(true);
     
     try {
-      // Create new user data
-      const newUserData = {
-        name: name.trim(),
-        email: email.toLowerCase().trim(),
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=FF6B6B&color=fff&size=150`,
-        memberSince: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-        watchedMovies: 0,
-        favorites: [],
-        downloads: [],
-        watchHistory: [],
-        darkMode: true
-      };
+      const result = await signUp(email.toLowerCase().trim(), password, name.trim());
       
-      const success = await signup(newUserData);
-      
-      if (success) {
+      if (result.success) {
         Alert.alert('Success', `Welcome to CinemaMax, ${name.split(' ')[0]}!`, [
           { text: 'OK', onPress: () => router.replace('/(tabs)') }
         ]);
       } else {
-        Alert.alert('Error', 'Failed to create account. Please try again.');
+        Alert.alert('Error', result.error || 'Failed to create account. Please try again.');
       }
     } catch (error) {
       Alert.alert('Error', 'Something went wrong. Please try again.');
