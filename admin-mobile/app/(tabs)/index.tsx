@@ -10,6 +10,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
+import { useRouter } from "expo-router";
 import { useAdminAuth } from "../../contexts/AdminAuthContext";
 
 const { width } = Dimensions.get('window');
@@ -44,6 +45,7 @@ function StatCard({ title, value, icon, color, change }: StatCardProps) {
 
 export default function AdminDashboard() {
   const { user } = useAdminAuth();
+  const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 1247,
@@ -66,13 +68,6 @@ export default function AdminDashboard() {
       setRefreshing(false);
     }, 1000);
   };
-
-  const quickActions = [
-    { title: 'Add Movie', icon: 'add-circle', color: '#FF6B6B' },
-    { title: 'View Users', icon: 'people', color: '#3B82F6' },
-    { title: 'Analytics', icon: 'bar-chart', color: '#10B981' },
-    { title: 'Settings', icon: 'settings', color: '#8B5CF6' },
-  ];
 
   return (
     <LinearGradient colors={['#1a1a1a', '#2d2d2d']} style={styles.container}>
@@ -149,14 +144,36 @@ export default function AdminDashboard() {
         <View style={styles.actionsContainer}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
-            {quickActions.map((action, index) => (
-              <TouchableOpacity key={index} style={styles.actionItem}>
-                <View style={[styles.actionIcon, { backgroundColor: action.color }]}>
-                  <Ionicons name={action.icon as any} size={24} color="#FFF" />
-                </View>
-                <Text style={styles.actionText}>{action.title}</Text>
-              </TouchableOpacity>
-            ))}
+            <TouchableOpacity 
+              style={styles.actionItem}
+              onPress={() => router.push('/add-movie')}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: '#FF6B6B' }]}>
+                <Ionicons name="add-circle" size={24} color="#FFF" />
+              </View>
+              <Text style={styles.actionText}>Add Movie</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.actionItem}>
+              <View style={[styles.actionIcon, { backgroundColor: '#3B82F6' }]}>
+                <Ionicons name="people" size={24} color="#FFF" />
+              </View>
+              <Text style={styles.actionText}>View Users</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.actionItem}>
+              <View style={[styles.actionIcon, { backgroundColor: '#10B981' }]}>
+                <Ionicons name="bar-chart" size={24} color="#FFF" />
+              </View>
+              <Text style={styles.actionText}>Analytics</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.actionItem}>
+              <View style={[styles.actionIcon, { backgroundColor: '#8B5CF6' }]}>
+                <Ionicons name="settings" size={24} color="#FFF" />
+              </View>
+              <Text style={styles.actionText}>Settings</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
