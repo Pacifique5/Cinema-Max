@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { useAdminAuth } from '@/contexts/AdminAuthContext'
 
 export default function HomePage() {
   const { user, isLoading } = useAdminAuth()

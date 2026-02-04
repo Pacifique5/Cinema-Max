@@ -30,7 +30,6 @@ export const useAdminAuth = () => {
   return context
 }
 
-// Demo admin users (in production, this would come from your backend)
 const DEMO_ADMIN_USERS = [
   {
     id: '1',
@@ -58,7 +57,6 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const router = useRouter()
 
   useEffect(() => {
-    // Check for stored admin session
     const storedUser = localStorage.getItem('adminUser')
     if (storedUser) {
       try {
@@ -74,7 +72,6 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const login = async (username: string, password: string) => {
     try {
-      // In production, this would be an API call
       const adminUser = DEMO_ADMIN_USERS.find(
         u => u.username === username && u.password === password
       )

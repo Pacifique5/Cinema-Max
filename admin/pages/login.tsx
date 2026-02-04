@@ -8,7 +8,7 @@ import {
   LockClosedIcon,
   ShieldCheckIcon
 } from '@heroicons/react/24/outline'
-import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { useAdminAuth } from '@/contexts/AdminAuthContext'
 import toast from 'react-hot-toast'
 
 export default function AdminLogin() {
@@ -44,11 +44,9 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center px-4 sm:px-6 lg:px-8">
-      {/* Background Pattern */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.02%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
       
       <div className="max-w-md w-full space-y-8 relative">
-        {/* Logo and Header */}
         <div className="text-center">
           <div className="flex justify-center">
             <div className="bg-gradient-to-r from-red-500 to-pink-500 p-4 rounded-full shadow-lg">
@@ -63,10 +61,8 @@ export default function AdminLogin() {
           </p>
         </div>
 
-        {/* Login Form */}
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Username Field */}
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-200 mb-2">
                 Username
@@ -89,7 +85,6 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-200 mb-2">
                 Password
@@ -123,7 +118,6 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            {/* Submit Button */}
             <div>
               <button
                 type="submit"
@@ -138,7 +132,6 @@ export default function AdminLogin() {
             </div>
           </form>
 
-          {/* Demo Credentials */}
           <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
             <h3 className="text-sm font-medium text-blue-200 mb-2">Demo Credentials:</h3>
             <div className="space-y-1 text-xs text-blue-300">
@@ -154,7 +147,6 @@ export default function AdminLogin() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="text-center">
           <p className="text-xs text-gray-500">
             © 2024 CinemaMax. All rights reserved.
