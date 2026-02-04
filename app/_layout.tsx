@@ -24,10 +24,10 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === '(tabs)';
+    const inTabsGroup = segments[0] === '(tabs)';
     
-    // If no user and no guest mode, ensure we're on the landing page
-    if (!user && !isGuest && inAuthGroup) {
+    // If user tries to access tabs without authentication, redirect to landing
+    if (inTabsGroup && !user && !isGuest) {
       router.replace('/');
     }
   }, [user, isGuest, isLoading, segments]);

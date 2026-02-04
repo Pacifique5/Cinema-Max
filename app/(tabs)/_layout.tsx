@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../../contexts/AuthContext";
 
 function TabIcon({ focused, name, title }: { focused: boolean; name: any; title: string }) {
   return (
@@ -23,6 +24,17 @@ function TabIcon({ focused, name, title }: { focused: boolean; name: any; title:
 }
 
 export default function TabsLayout() {
+  const { user, isGuest, isLoading } = useAuth();
+
+  // Show loading or redirect if not authenticated
+  if (isLoading) {
+    return null;
+  }
+
+  // If no authentication, don't render tabs at all
+  if (!user && !isGuest) {
+    return null;
+  }
   return (
     <Tabs
       screenOptions={{

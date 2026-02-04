@@ -93,21 +93,25 @@ export default function ProfileScreen() {
               <Ionicons name="person-outline" size={60} color="#FF6B6B" />
             </View>
             <Text style={styles.guestTitle}>Browsing as Guest</Text>
-            <Text style={styles.guestSubtitle}>Sign up to save favorites, create watchlists, and more!</Text>
+            <Text style={styles.guestSubtitle}>Sign up to unlock premium features like favorites, watchlists, and personalized recommendations!</Text>
             
-            <TouchableOpacity 
-              style={styles.signUpButton}
-              onPress={() => router.push('/auth/signup')}
-            >
-              <Text style={styles.signUpButtonText}>Create Account</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.signInButton}
-              onPress={() => router.push('/auth/login')}
-            >
-              <Text style={styles.signInButtonText}>Sign In</Text>
-            </TouchableOpacity>
+            <View style={styles.guestButtonContainer}>
+              <TouchableOpacity 
+                style={styles.signUpButton}
+                onPress={() => router.push('/auth/signup')}
+              >
+                <Ionicons name="person-add" size={20} color="#FFFFFF" />
+                <Text style={styles.signUpButtonText}>Create Account</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.signInButton}
+                onPress={() => router.push('/auth/login')}
+              >
+                <Ionicons name="log-in" size={20} color="#FF6B6B" />
+                <Text style={styles.signInButtonText}>Sign In</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Limited Guest Features */}
@@ -117,22 +121,39 @@ export default function ProfileScreen() {
               <MenuOption
                 icon="search-outline"
                 title="Browse Movies"
-                subtitle="Discover new films"
+                subtitle="Discover new films and trending content"
                 onPress={() => router.push('/(tabs)/search')}
               />
               <MenuOption
                 icon="play-circle-outline"
                 title="Watch Trailers"
-                subtitle="Preview movies"
-                onPress={() => console.log("Trailers")}
+                subtitle="Preview movies before watching"
+                onPress={() => router.push('/(tabs)')}
               />
+              <MenuOption
+                icon="information-circle-outline"
+                title="Movie Details"
+                subtitle="View ratings, cast, and reviews"
+                onPress={() => router.push('/(tabs)')}
+              />
+            </View>
+            
+            <View style={styles.premiumFeatures}>
+              <Text style={styles.premiumTitle}>🔒 Premium Features</Text>
+              <Text style={styles.premiumSubtitle}>Sign up to unlock:</Text>
+              <View style={styles.premiumList}>
+                <Text style={styles.premiumItem}>• Save favorites and watchlists</Text>
+                <Text style={styles.premiumItem}>• Personalized recommendations</Text>
+                <Text style={styles.premiumItem}>• Watch history tracking</Text>
+                <Text style={styles.premiumItem}>• Custom profile settings</Text>
+              </View>
             </View>
           </View>
 
           <View style={styles.logoutSection}>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <Ionicons name="arrow-back-outline" size={20} color="#FF6B6B" />
-              <Text style={styles.logoutText}>Back to Welcome</Text>
+            <TouchableOpacity style={styles.guestLogoutButton} onPress={handleLogout}>
+              <Ionicons name="arrow-back-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.guestLogoutText}>Back to Welcome</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -573,15 +594,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
     lineHeight: 22,
+    paddingHorizontal: 10,
+  },
+  guestButtonContainer: {
+    width: '100%',
+    gap: 12,
   },
   signUpButton: {
     backgroundColor: '#FF6B6B',
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 40,
     borderRadius: 25,
-    marginBottom: 12,
     width: '100%',
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    elevation: 4,
+    shadowColor: '#FF6B6B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   signUpButtonText: {
     color: '#FFFFFF',
@@ -591,16 +624,68 @@ const styles = StyleSheet.create({
   signInButton: {
     borderWidth: 2,
     borderColor: '#FF6B6B',
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 40,
     borderRadius: 25,
     width: '100%',
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,107,107,0.1)',
   },
   signInButtonText: {
     color: '#FF6B6B',
     fontSize: 16,
     fontWeight: '600',
+  },
+  
+  // Guest logout button
+  guestLogoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    gap: 8,
+  },
+  guestLogoutText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  
+  // Premium features section
+  premiumFeatures: {
+    backgroundColor: 'rgba(255,107,107,0.05)',
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,107,0.2)',
+  },
+  premiumTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FF6B6B',
+    marginBottom: 8,
+  },
+  premiumSubtitle: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    marginBottom: 12,
+  },
+  premiumList: {
+    gap: 6,
+  },
+  premiumItem: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    lineHeight: 20,
   },
   
   // Modal styles

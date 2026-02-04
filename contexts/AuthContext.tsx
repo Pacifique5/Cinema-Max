@@ -108,10 +108,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    setUser(null);
-    setIsGuest(false);
-    await AsyncStorage.removeItem('user');
-    await AsyncStorage.removeItem('isGuest');
+    try {
+      // Clear all state
+      setUser(null);
+      setIsGuest(false);
+      
+      // Clear storage
+      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('isGuest');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   const continueAsGuest = async () => {
