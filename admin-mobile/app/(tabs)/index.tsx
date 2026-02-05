@@ -16,6 +16,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "expo-router";
 import { useAdminAuth } from "../../contexts/AdminAuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
+import DrawerMenu from "../../components/DrawerMenu";
 
 const { width } = Dimensions.get('window');
 
@@ -112,8 +113,11 @@ export default function AdminDashboard() {
   const { user, hasPermission } = useAdminAuth();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
+  const drawerSlideAnim = useRef(new Animated.Value(-320)).current;
+  const drawerOverlayAnim = useRef(new Animated.Value(0)).current;
   const [currentTime, setCurrentTime] = useState(new Date());
   const [stats, setStats] = useState({
     totalUsers: 1247,
@@ -152,6 +156,41 @@ export default function AdminDashboard() {
 
     return () => clearInterval(timeInterval);
   }, [fadeAnim, slideAnim]);
+
+  const openDrawer = () => {
+    setDrawerVisible(true);
+    Animated.parallel([
+      Animated.timing(drawerSlideAnim, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(drawerOverlayAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const closeDrawer = () => {
+    Animated.parallel([
+      Animated.timing(drawerSlideAnim, {
+        toValue: -320,
+        duration: 300,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(drawerOverlayAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setDrawerVisible(false);
+    });
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -250,15 +289,25 @@ export default function AdminDashboard() {
           >
             {/* Enhanced Header */}
             <View style={styles.header}>
-              <View style={styles.headerLeft}>
+              <TouchableOpacity 
+                style={styles.menuButton}
+                onPress={openDrawer}
+              >
+                <View style={styles.menuButtonContainer}>
+                  <Ionicons name="menu" size={24} color="#FFF" />
+                </View>
+              </TouchableOpacity>
+              
+              <View style={styles.headerCenter}>
                 <Text style={styles.greetingText}>{getGreeting()}</Text>
                 <Text style={styles.nameText}>{user?.username}</Text>
                 <View style={styles.roleContainer}>
                   <View style={[styles.roleDot, { backgroundColor: user?.role === 'admin' ? '#FF6B6B' : '#4ECDC4' }]} />
-                  <Text style={styles.roleText}>{user?.role?.toUpperCase()} DASHBOARD</Text>
+                  <Text style={styles.roleText}>ADMIN DASHBOARD</Text>
                 </View>
                 <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
               </View>
+              
               <TouchableOpacity 
                 style={styles.avatarContainer}
                 onPress={() => router.push('/(tabs)/profile')}
@@ -372,42 +421,42 @@ export default function AdminDashboard() {
                 >
                   <LinearGradient colors={['#FF6B6B', '#FF8E8E'] as const} style={styles.actionGradient}>
                     <Ionicons name="add-circle" size={28} color="#FFF" />
-                    <Text style={styles.actionText}>Add Movie</Text>
+                    <Text style={styles.actionText}>Add New Movie</Text>
                     <Text style={styles.actionSubtext}>Quick add new content</Text>
                   </LinearGradient>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.actionItem}
-                  onPress={() => handleQuickAction('View Users', '/(tabs)/users')}
+                  onPress={() => handleQuickAction('System Backup')}
                 >
                   <View style={[styles.actionIcon, { backgroundColor: '#667eea' }]}>
-                    <Ionicons name="people" size={24} color="#FFF" />
+                    <Ionicons name="cloud-upload" size={24} color="#FFF" />
                   </View>
-                  <Text style={styles.actionText}>Manage Users</Text>
-                  <Text style={styles.actionSubtext}>User control</Text>
+                  <Text style={styles.actionText}>System Backup</Text>
+                  <Text style={styles.actionSubtext}>Backup database</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.actionItem}
-                  onPress={() => handleQuickAction('Analytics', '/(tabs)/analytics')}
+                  onPress={() => handleQuickAction('Generate Report')}
                 >
                   <View style={[styles.actionIcon, { backgroundColor: '#43e97b' }]}>
-                    <Ionicons name="bar-chart" size={24} color="#FFF" />
+                    <Ionicons name="document-text" size={24} color="#FFF" />
                   </View>
-                  <Text style={styles.actionText}>View Analytics</Text>
-                  <Text style={styles.actionSubtext}>Insights & reports</Text>
+                  <Text style={styles.actionText}>Generate Report</Text>
+                  <Text style={styles.actionSubtext}>Export analytics</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.actionItem}
-                  onPress={() => handleQuickAction('System Settings')}
+                  onPress={() => handleQuickAction('System Maintenance')}
                 >
                   <View style={[styles.actionIcon, { backgroundColor: '#f093fb' }]}>
-                    <Ionicons name="settings" size={24} color="#FFF" />
+                    <Ionicons name="construct" size={24} color="#FFF" />
                   </View>
-                  <Text style={styles.actionText}>Settings</Text>
-                  <Text style={styles.actionSubtext}>Configure system</Text>
+                  <Text style={styles.actionText}>Maintenance</Text>
+                  <Text style={styles.actionSubtext}>System tools</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -494,6 +543,14 @@ export default function AdminDashboard() {
           </ScrollView>
         </Animated.View>
       </SafeAreaView>
+      
+      {/* Drawer Menu */}
+      <DrawerMenu
+        isVisible={drawerVisible}
+        onClose={closeDrawer}
+        slideAnim={drawerSlideAnim}
+        overlayAnim={drawerOverlayAnim}
+      />
     </LinearGradient>
   );
 }
@@ -514,10 +571,26 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 25,
+  },
+  menuButton: {
+    padding: 8,
+  },
+  menuButtonContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 16,
   },
   headerLeft: {
     flex: 1,
@@ -526,12 +599,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#888',
     marginBottom: 4,
+    textAlign: 'center',
   },
   nameText: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#FFF',
     marginBottom: 6,
+    textAlign: 'center',
   },
   roleContainer: {
     flexDirection: 'row',
@@ -553,6 +628,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     fontWeight: '500',
+    textAlign: 'center',
   },
   avatarContainer: {
     position: 'relative',

@@ -6,12 +6,15 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  RefreshControl
+  RefreshControl,
+  Animated
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import DrawerMenu from "../../components/DrawerMenu";
 
 interface User {
   id: string;
@@ -24,8 +27,12 @@ interface User {
 }
 
 export default function UsersScreen() {
+  const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const drawerSlideAnim = useRef(new Animated.Value(-320)).current;
+  const drawerOverlayAnim = useRef(new Animated.Value(0)).current;
   const [users, setUsers] = useState<User[]>([
     {
       id: '1',
@@ -55,6 +62,39 @@ export default function UsersScreen() {
       lastActive: '3 days ago'
     }
   ]);
+
+  const openDrawer = () => {
+    setDrawerVisible(true);
+    Animated.parallel([
+      Animated.timing(drawerSlideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(drawerOverlayAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const closeDrawer = () => {
+    Animated.parallel([
+      Animated.timing(drawerSlideAnim, {
+        toValue: -320,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(drawerOverlayAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setDrawerVisible(false);
+    });
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -102,7 +142,17 @@ export default function UsersScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.menuButton}
+            onPress={openDrawer}
+          >
+            <View style={styles.menuButtonContainer}>
+              <Ionicons name="menu" size={24} color="#FFF" />
+            </View>
+          </TouchableOpacity>
+          
           <Text style={styles.headerTitle}>User Management</Text>
+          
           <TouchableOpacity style={styles.addButton}>
             <Ionicons name="person-add" size={20} color="#FFF" />
           </TouchableOpacity>
@@ -204,6 +254,14 @@ export default function UsersScreen() {
           ))}
         </ScrollView>
       </SafeAreaView>
+      
+      {/* Drawer Menu */}
+      <DrawerMenu
+        isVisible={drawerVisible}
+        onClose={closeDrawer}
+        slideAnim={drawerSlideAnim}
+        overlayAnim={drawerOverlayAnim}
+      />
     </LinearGradient>
   );
 }
@@ -221,6 +279,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 20,
+  },
+  menuButton: {
+    padding: 8,
+  },
+  menuButtonContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 24,
