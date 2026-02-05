@@ -379,19 +379,24 @@ export default function Users() {
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        {user.avatar ? (
-                          <img className="h-10 w-10 rounded-full" src={user.avatar} alt={user.name} />
+                        {user.first_name ? (
+                          <img 
+                            className="h-10 w-10 rounded-full" 
+                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.first_name + ' ' + user.last_name)}&background=FF6B6B&color=fff&size=40`} 
+                            alt={`${user.first_name} ${user.last_name}`} 
+                          />
                         ) : (
                           <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
                             <span className="text-sm font-medium text-gray-700">
-                              {user.name.charAt(0)}
+                              {user.username.charAt(0).toUpperCase()}
                             </span>
                           </div>
                         )}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                        <div className="text-sm font-medium text-gray-900">{user.first_name} {user.last_name}</div>
                         <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="text-xs text-gray-400">@{user.username}</div>
                       </div>
                     </div>
                   </td>
@@ -410,15 +415,13 @@ export default function Users() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <select
-                      value={user.status}
-                      onChange={(e) => handleStatusChange(user.id, e.target.value as User['status'])}
-                      className={`text-sm px-2 py-1 rounded-full border-0 ${getStatusColor(user.status)}`}
-                    >
-                      <option value="active">Active</option>
-                      <option value="suspended">Suspended</option>
-                      <option value="banned">Banned</option>
-                    </select>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      user.is_active 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {user.is_active ? 'Active' : 'Inactive'}
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     <div>

@@ -10,13 +10,17 @@ import {
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
-  UserCircleIcon
+  UserCircleIcon,
+  MagnifyingGlassIcon,
+  BellIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
 import { useAdminAuth } from '@/contexts/AdminAuthContext'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Users', href: '/users', icon: UsersIcon },
+  { name: 'Profile', href: '/profile', icon: UserCircleIcon },
+  { name: 'Table', href: '/users', icon: UsersIcon },
   { name: 'Movies', href: '/movies', icon: FilmIcon },
   { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
   { name: 'Settings', href: '/settings', icon: CogIcon },
@@ -28,11 +32,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-40 lg:hidden ${sidebarOpen ? '' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-        <div className="relative flex w-full max-w-xs flex-1 flex-col bg-white">
+        <div className="relative flex w-full max-w-xs flex-1 flex-col bg-gradient-to-b from-indigo-600 to-purple-700">
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
               type="button"
@@ -43,71 +47,86 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
           <div className="h-0 flex-1 overflow-y-auto pt-5 pb-4">
-            <div className="flex flex-shrink-0 items-center px-4">
-              <h1 className="text-xl font-bold text-gray-900">CinemaMax Admin</h1>
+            <div className="flex flex-shrink-0 items-center px-6 mb-8">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mr-3">
+                  <span className="text-indigo-600 font-bold text-lg">😊</span>
+                </div>
+                <h1 className="text-xl font-bold text-white">BRAND</h1>
+              </div>
             </div>
-            <nav className="mt-5 space-y-1 px-2">
+            <nav className="px-3 space-y-2">
               {navigation.map((item) => {
                 const isActive = router.pathname === item.href
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${
+                    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                       isActive
-                        ? 'bg-gray-100 text-gray-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-white bg-opacity-20 text-white shadow-lg'
+                        : 'text-indigo-100 hover:bg-white hover:bg-opacity-10 hover:text-white'
                     }`}
                   >
-                    <item.icon className="mr-4 h-6 w-6 flex-shrink-0" />
+                    <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
                     {item.name}
                   </Link>
                 )
               })}
             </nav>
+          </div>
+          
+          {/* Collapse button */}
+          <div className="flex-shrink-0 p-4">
+            <button className="w-full flex items-center justify-center p-2 text-indigo-200 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex min-h-0 flex-1 flex-col bg-white border-r border-gray-200">
+        <div className="flex min-h-0 flex-1 flex-col bg-gradient-to-b from-indigo-600 to-purple-700 shadow-xl">
           <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
-            <div className="flex flex-shrink-0 items-center px-4">
-              <h1 className="text-xl font-bold text-gray-900">CinemaMax Admin</h1>
+            <div className="flex flex-shrink-0 items-center px-6 mb-8">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mr-3">
+                  <span className="text-indigo-600 font-bold text-lg">😊</span>
+                </div>
+                <h1 className="text-xl font-bold text-white">BRAND</h1>
+              </div>
             </div>
-            <nav className="mt-5 flex-1 space-y-1 px-2">
+            <nav className="px-3 space-y-2">
               {navigation.map((item) => {
                 const isActive = router.pathname === item.href
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                       isActive
-                        ? 'bg-gray-100 text-gray-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-white bg-opacity-20 text-white shadow-lg'
+                        : 'text-indigo-100 hover:bg-white hover:bg-opacity-10 hover:text-white'
                     }`}
                   >
-                    <item.icon className="mr-3 h-6 w-6 flex-shrink-0" />
+                    <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
                     {item.name}
                   </Link>
                 )
               })}
             </nav>
           </div>
-          <div className="flex flex-shrink-0 border-t border-gray-200 p-4">
-            <div className="group block w-full flex-shrink-0">
-              <div className="flex items-center">
-                <div>
-                  <UserCircleIcon className="inline-block h-9 w-9 text-gray-400" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700">{user?.username}</p>
-                  <p className="text-xs font-medium text-gray-500 capitalize">{user?.role?.replace('_', ' ')}</p>
-                </div>
-              </div>
-            </div>
+          
+          {/* Collapse button */}
+          <div className="flex-shrink-0 p-4">
+            <button className="w-full flex items-center justify-center p-2 text-indigo-200 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -127,18 +146,54 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <div className="flex flex-1 flex-col">
           {/* Header */}
-          <header className="bg-white shadow-sm border-b border-gray-200">
-            <div className="px-4 sm:px-6 lg:px-8">
+          <header className="bg-white shadow-sm">
+            <div className="px-6 lg:px-8">
               <div className="flex h-16 justify-between items-center">
-                <div className="flex items-center">
-                  <h2 className="text-lg font-semibold text-gray-900 lg:hidden">
-                    {navigation.find(item => item.href === router.pathname)?.name || 'Admin Panel'}
-                  </h2>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="hidden lg:flex lg:items-center lg:space-x-4">
-                    <span className="text-sm text-gray-700">Welcome, {user?.username}</span>
+                <div className="flex items-center flex-1">
+                  <div className="max-w-lg w-full lg:max-w-xs">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        placeholder="Search for..."
+                        type="search"
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm">
+                          <MagnifyingGlassIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  {/* Notifications */}
+                  <div className="flex items-center space-x-3">
+                    <button className="relative p-2 text-gray-400 hover:text-gray-500">
+                      <BellIcon className="h-6 w-6" />
+                      <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400"></span>
+                    </button>
+                    <button className="relative p-2 text-gray-400 hover:text-gray-500">
+                      <DocumentTextIcon className="h-6 w-6" />
+                      <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400"></span>
+                    </button>
+                  </div>
+                  
+                  {/* User menu */}
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-gray-700 font-medium">{user?.first_name} {user?.last_name}</span>
+                    <div className="relative">
+                      <img
+                        className="h-8 w-8 rounded-full"
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent((user?.first_name || '') + ' ' + (user?.last_name || ''))}&background=6366f1&color=fff&size=32`}
+                        alt="User avatar"
+                      />
+                    </div>
+                  </div>
+                  
                   <button
                     onClick={logout}
                     className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
@@ -152,9 +207,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </header>
 
           {/* Main content */}
-          <main className="flex-1">
+          <main className="flex-1 bg-gray-100">
             <div className="py-6">
-              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="mx-auto max-w-7xl px-6 lg:px-8">
                 {children}
               </div>
             </div>
