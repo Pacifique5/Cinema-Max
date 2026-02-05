@@ -1,7 +1,7 @@
 // Unified API configuration for frontend to use the same PostgreSQL backend
 // This replaces Supabase and connects to the same backend as admin panels
 
-const API_BASE_URL = 'http://localhost:3000'; // Same backend as admin panels
+import { API_BASE_URL } from '../config/network';
 
 export interface User {
   id: string;

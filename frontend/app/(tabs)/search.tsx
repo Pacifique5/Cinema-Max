@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, TextInput, FlatList, Image, TouchableOpacity } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { api } from "../../lib/api";
 
 // Same sample data for search
 const SAMPLE_MOVIES = [
@@ -48,30 +50,85 @@ const SAMPLE_MOVIES = [
   }
 ];
 
-const MovieCard = ({ movie }: { movie: any }) => (
-  <TouchableOpacity style={styles.movieCard}>
-    <Image source={{ uri: movie.poster }} style={styles.poster} />
-    <View style={styles.movieInfo}>
-      <Text style={styles.movieTitle} numberOfLines={1}>{movie.title}</Text>
-      <Text style={styles.movieYear}>{movie.year}</Text>
-      <Text style={styles.movieRating}>⭐ {movie.rating}</Text>
-    </View>
-  </TouchableOpacity>
-);
+const MovieCard = ({ movie }: { movie: any }) => {
+  const router = useRouter();
+  
+  // Handle both API and mock data formats
+  const movieData = {
+    id: movie.id,
+    title: movie.title,
+    year: movie.release_date ? new Date(movie.release_date).getFullYear().toString() : movie.year || '2023',
+    rating: movie.vote_average ? movie.vote_average.toFixed(1) : movie.rating || '7.0',
+    poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : movie.poster
+  };
+  
+  return (
+    <TouchableOpacity 
+      style={styles.movieCard}
+      onPress={() => router.push(`/movie/${movieData.id}`)}
+    >
+      <Image source={{ uri: movieData.poster }} style={styles.poster} />
+      <View style={styles.movieInfo}>
+        <Text style={styles.movieTitle} numberOfLines={1}>{movieData.title}</Text>
+        <Text style={styles.movieYear}>{movieData.year}</Text>
+        <Text style={styles.movieRating}>⭐ {movieData.rating}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 export default function Search() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredMovies, setFilteredMovies] = useState(SAMPLE_MOVIES);
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  const handleSearch = (text: string) => {
+  useEffect(() => {
+    loadPopularMovies();
+  }, []);
+
+  const loadPopularMovies = async () => {
+    try {
+      setLoading(true);
+      const response = await api.getPopularMovies(1);
+      if (response.results) {
+        setMovies(response.results.slice(0, 10));
+      }
+    } catch (error) {
+      console.error('Error loading popular movies:', error);
+      // Fallback to sample data
+      setMovies(SAMPLE_MOVIES);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async (text: string) => {
     setSearchQuery(text);
+    setHasSearched(true);
+    
     if (text.trim() === "") {
-      setFilteredMovies(SAMPLE_MOVIES);
-    } else {
+      loadPopularMovies();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await api.searchMovies(text.trim());
+      if (response.results) {
+        setMovies(response.results);
+      } else {
+        setMovies([]);
+      }
+    } catch (error) {
+      console.error('Error searching movies:', error);
+      // Fallback to local search in sample data
       const filtered = SAMPLE_MOVIES.filter(movie =>
         movie.title.toLowerCase().includes(text.toLowerCase())
       );
-      setFilteredMovies(filtered);
+      setMovies(filtered);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,14 +150,20 @@ export default function Search() {
       </View>
 
       <FlatList
-        data={filteredMovies}
+        data={movies}
         renderItem={({ item }) => <MovieCard movie={item} />}
         keyExtractor={(item) => item.id.toString()}
         style={styles.list}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No movies found</Text>
+            {loading ? (
+              <Text style={styles.emptyText}>Searching...</Text>
+            ) : hasSearched ? (
+              <Text style={styles.emptyText}>No movies found</Text>
+            ) : (
+              <Text style={styles.emptyText}>Popular movies</Text>
+            )}
           </View>
         }
       />

@@ -78,9 +78,10 @@ export default function ProfileScreen() {
   };
 
   const handleSaveProfile = async () => {
-    if (profile && editName.trim()) {
+    if (user && editFirstName.trim() && editLastName.trim()) {
       const result = await updateProfile({ 
-        name: editName.trim(),
+        first_name: editFirstName.trim(),
+        last_name: editLastName.trim(),
         email: editEmail.trim() 
       });
       
@@ -90,13 +91,12 @@ export default function ProfileScreen() {
       } else {
         Alert.alert('Error', result.error || 'Failed to update profile');
       }
+    } else {
+      Alert.alert('Error', 'Please fill in all required fields');
     }
   };
 
-  const handleToggleDarkMode = async () => {
-    await toggleDarkMode();
-    Alert.alert('Success', `Dark mode ${profile?.dark_mode ? 'disabled' : 'enabled'}!`);
-  };
+
 
   // Guest user display
   if (isGuest) {
@@ -289,8 +289,8 @@ export default function ProfileScreen() {
             <MenuOption
               icon="moon-outline"
               title="Dark Mode"
-              subtitle={profile?.dark_mode ? "Enabled" : "Disabled"}
-              onPress={handleToggleDarkMode}
+              subtitle="Coming soon"
+              onPress={() => Alert.alert("Dark Mode", "Dark mode will be available in a future update")}
             />
             <MenuOption
               icon="shield-checkmark-outline"
@@ -360,12 +360,23 @@ export default function ProfileScreen() {
             
             <View style={styles.modalForm}>
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Name</Text>
+                <Text style={styles.inputLabel}>First Name</Text>
                 <TextInput
                   style={styles.modalInput}
-                  value={editName}
-                  onChangeText={setEditName}
-                  placeholder="Enter your name"
+                  value={editFirstName}
+                  onChangeText={setEditFirstName}
+                  placeholder="Enter your first name"
+                  placeholderTextColor="#666"
+                />
+              </View>
+              
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Last Name</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editLastName}
+                  onChangeText={setEditLastName}
+                  placeholder="Enter your last name"
                   placeholderTextColor="#666"
                 />
               </View>

@@ -2,9 +2,10 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, FlatList, 
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { OptimizedImage } from "../../components/OptimizedImage";
+import { api } from "../../lib/api";
 
 const { width } = Dimensions.get('window');
 
@@ -79,26 +80,37 @@ const TRENDING_MOVIES = [
 const FeaturedMovieCard = ({ movie, index }: { movie: any, index: number }) => {
   const router = useRouter();
   
+  // Handle both API and mock data formats
+  const movieData = {
+    id: movie.id,
+    title: movie.title,
+    year: movie.release_date ? new Date(movie.release_date).getFullYear().toString() : movie.year || '2023',
+    rating: movie.vote_average ? movie.vote_average.toFixed(1) : movie.rating || '7.0',
+    genre: movie.genres || movie.genre || 'Movie',
+    backdrop: movie.backdrop_path ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` : movie.backdrop,
+    duration: movie.runtime ? `${movie.runtime} min` : movie.duration || '120 min'
+  };
+  
   return (
     <TouchableOpacity 
       style={[styles.featuredCard, { marginLeft: index === 0 ? 20 : 0 }]}
-      onPress={() => router.push(`/movie/${movie.id}`)}
+      onPress={() => router.push(`/movie/${movieData.id}`)}
     >
-      <OptimizedImage source={{ uri: movie.backdrop }} style={styles.featuredImage} />
+      <OptimizedImage source={{ uri: movieData.backdrop }} style={styles.featuredImage} />
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.8)']}
         style={styles.featuredGradient}
       >
         <View style={styles.featuredContent}>
-          <Text style={styles.featuredTitle}>{movie.title}</Text>
+          <Text style={styles.featuredTitle}>{movieData.title}</Text>
           <View style={styles.featuredMeta}>
-            <Text style={styles.featuredYear}>{movie.year}</Text>
+            <Text style={styles.featuredYear}>{movieData.year}</Text>
             <Text style={styles.featuredDot}>•</Text>
-            <Text style={styles.featuredGenre}>{movie.genre}</Text>
+            <Text style={styles.featuredGenre}>{Array.isArray(movieData.genre) ? movieData.genre[0] : movieData.genre}</Text>
             <Text style={styles.featuredDot}>•</Text>
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={12} color="#FFD700" />
-              <Text style={styles.featuredRating}>{movie.rating}</Text>
+              <Text style={styles.featuredRating}>{movieData.rating}</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.playButton}>
@@ -114,18 +126,27 @@ const FeaturedMovieCard = ({ movie, index }: { movie: any, index: number }) => {
 const TrendingMovieCard = ({ movie }: { movie: any }) => {
   const router = useRouter();
   
+  // Handle both API and mock data formats
+  const movieData = {
+    id: movie.id,
+    title: movie.title,
+    year: movie.release_date ? new Date(movie.release_date).getFullYear().toString() : movie.year || '2023',
+    rating: movie.vote_average ? movie.vote_average.toFixed(1) : movie.rating || '7.0',
+    poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : movie.poster
+  };
+  
   return (
     <TouchableOpacity 
       style={styles.trendingCard}
-      onPress={() => router.push(`/movie/${movie.id}`)}
+      onPress={() => router.push(`/movie/${movieData.id}`)}
     >
-      <OptimizedImage source={{ uri: movie.poster }} style={styles.trendingImage} />
+      <OptimizedImage source={{ uri: movieData.poster }} style={styles.trendingImage} />
       <View style={styles.trendingContent}>
-        <Text style={styles.trendingTitle} numberOfLines={2}>{movie.title}</Text>
-        <Text style={styles.trendingYear}>{movie.year}</Text>
+        <Text style={styles.trendingTitle} numberOfLines={2}>{movieData.title}</Text>
+        <Text style={styles.trendingYear}>{movieData.year}</Text>
         <View style={styles.trendingRating}>
           <Ionicons name="star" size={12} color="#FFD700" />
-          <Text style={styles.trendingRatingText}>{movie.rating}</Text>
+          <Text style={styles.trendingRatingText}>{movieData.rating}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -134,17 +155,50 @@ const TrendingMovieCard = ({ movie }: { movie: any }) => {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, profile, isGuest } = useAuth();
+  const { user, isGuest } = useAuth();
   const [activeCategory, setActiveCategory] = useState('All');
+  const [featuredMovies, setFeaturedMovies] = useState([]);
+  const [trendingMovies, setTrendingMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   const categories = ['All', 'Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi'];
+
+  useEffect(() => {
+    loadMovies();
+  }, []);
+
+  const loadMovies = async () => {
+    try {
+      setLoading(true);
+      
+      // Load popular movies for featured section
+      const popularResponse = await api.getPopularMovies(1);
+      if (popularResponse.results) {
+        setFeaturedMovies(popularResponse.results.slice(0, 3));
+      }
+      
+      // Load trending movies
+      const trendingResponse = await api.getTrendingMovies('week');
+      if (trendingResponse.results) {
+        setTrendingMovies(trendingResponse.results.slice(0, 6));
+      }
+      
+    } catch (error) {
+      console.error('Error loading movies:', error);
+      // Fallback to mock data if API fails
+      setFeaturedMovies(FEATURED_MOVIES);
+      setTrendingMovies(TRENDING_MOVIES);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getGreeting = () => {
     if (isGuest) {
       return "Welcome, Guest! 👋";
     }
-    if (profile) {
-      const firstName = profile.name.split(' ')[0]; // Get first name only
+    if (user) {
+      const firstName = user.first_name; // Get first name from user object
       return `Hello, ${firstName}! 👋`;
     }
     return "Hello, Movie Lover! 👋";
@@ -169,8 +223,8 @@ export default function HomeScreen() {
             style={styles.profileButton}
             onPress={() => router.push('/(tabs)/profile')}
           >
-            {profile?.avatar_url ? (
-              <Image source={{ uri: profile.avatar_url }} style={styles.profileImage} />
+            {user?.email ? (
+              <Image source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent((user?.first_name || '') + ' ' + (user?.last_name || ''))}&background=FF6B6B&color=fff&size=64` }} style={styles.profileImage} />
             ) : (
               <Ionicons name="person-circle" size={32} color="#FF6B6B" />
             )}
@@ -190,14 +244,20 @@ export default function HomeScreen() {
         {/* Featured Movies */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Featured Movies</Text>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={FEATURED_MOVIES}
-            renderItem={({ item, index }) => <FeaturedMovieCard movie={item} index={index} />}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={styles.featuredList}
-          />
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading movies...</Text>
+            </View>
+          ) : (
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={featuredMovies}
+              renderItem={({ item, index }) => <FeaturedMovieCard movie={item} index={index} />}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.featuredList}
+            />
+          )}
         </View>
 
         {/* Categories */}
@@ -232,14 +292,20 @@ export default function HomeScreen() {
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={TRENDING_MOVIES}
-            renderItem={({ item }) => <TrendingMovieCard movie={item} />}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={styles.trendingList}
-          />
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading trending...</Text>
+            </View>
+          ) : (
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={trendingMovies}
+              renderItem={({ item }) => <TrendingMovieCard movie={item} />}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.trendingList}
+            />
+          )}
         </View>
 
         {/* Continue Watching */}
@@ -527,5 +593,14 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  loadingContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#CCCCCC',
+    fontSize: 16,
   },
 });

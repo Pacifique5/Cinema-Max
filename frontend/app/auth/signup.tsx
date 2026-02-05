@@ -10,6 +10,7 @@ export default function SignupScreen() {
   const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -19,9 +20,9 @@ export default function SignupScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = async () => {
-    const { name, email, password, confirmPassword } = formData;
+    const { name, username, email, password, confirmPassword } = formData;
     
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !username || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -40,11 +41,16 @@ export default function SignupScreen() {
       Alert.alert('Error', 'Please enter a valid name');
       return;
     }
+
+    if (username.trim().length < 3) {
+      Alert.alert('Error', 'Username must be at least 3 characters');
+      return;
+    }
     
     setIsLoading(true);
     
     try {
-      const result = await signUp(email.toLowerCase().trim(), password, name.trim());
+      const result = await signUp(email.toLowerCase().trim(), password, name.trim(), username.toLowerCase().trim());
       
       if (result.success) {
         Alert.alert('Success', `Welcome to CinemaMax, ${name.split(' ')[0]}!`, [
@@ -84,6 +90,18 @@ export default function SignupScreen() {
               placeholderTextColor="#CCCCCC"
               value={formData.name}
               onChangeText={(value) => updateFormData('name', value)}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Ionicons name="at" size={20} color="#CCCCCC" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Username"
+              placeholderTextColor="#CCCCCC"
+              value={formData.username}
+              onChangeText={(value) => updateFormData('username', value)}
+              autoCapitalize="none"
             />
           </View>
 
