@@ -18,10 +18,16 @@ interface Movie {
   release_date: string
   vote_average: number
   vote_count: number
-  genre_ids: number[]
+  genres: string
   runtime?: number
-  status: 'active' | 'inactive'
+  director?: string
+  movie_cast?: string
+  status: 'published' | 'draft' | 'archived'
   created_at: string
+  updated_at: string
+  total_favorites: number
+  total_reviews: number
+  average_rating: string
 }
 
 export default function Movies() {
@@ -30,6 +36,9 @@ export default function Movies() {
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalMovies, setTotalMovies] = useState(0)
   const [newMovie, setNewMovie] = useState({
     title: '',
     overview: '',
@@ -38,66 +47,156 @@ export default function Movies() {
     release_date: '',
     vote_average: 0,
     runtime: 0,
-    genre_ids: [] as number[]
+    director: '',
+    movie_cast: '',
+    genres: ''
   })
 
-  // Mock data - replace with API calls
   useEffect(() => {
-    const mockMovies: Movie[] = [
-      {
-        id: '1',
-        title: 'The Dark Knight',
-        overview: 'Batman raises the stakes in his war on crime...',
-        poster_path: '/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
-        backdrop_path: '/hqkIcbrOHL86UncnHIsHVcVmzue.jpg',
-        release_date: '2008-07-18',
-        vote_average: 9.0,
-        vote_count: 28000,
-        genre_ids: [28, 80, 18],
-        runtime: 152,
-        status: 'active',
-        created_at: '2024-01-15T10:30:00Z'
-      },
-      {
-        id: '2',
-        title: 'Inception',
-        overview: 'A thief who steals corporate secrets through dream-sharing technology...',
-        poster_path: '/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
-        backdrop_path: '/s3TBrRGB1iav7gFOCNx3H31MoES.jpg',
-        release_date: '2010-07-16',
-        vote_average: 8.8,
-        vote_count: 32000,
-        genre_ids: [28, 878, 53],
-        runtime: 148,
-        status: 'active',
-        created_at: '2024-01-14T09:15:00Z'
+    fetchMovies()
+  }, [currentPage])
+
+  const fetchMovies = async () => {
+    try {
+      setLoading(true)
+      const token = localStorage.getItem('adminToken')
+      if (!token) return
+
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '20'
+      })
+
+      const response = await fetch(`http://localhost:3000/api/admin/movies/stats?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setMovies(data.movies)
+        setTotalPages(data.totalPages)
+        setTotalMovies(data.total)
+      } else {
+        toast.error('Failed to fetch movies')
       }
-    ]
-    
-    setTimeout(() => {
-      setMovies(mockMovies)
+    } catch (error) {
+      console.error('Error fetching movies:', error)
+      toast.error('Error fetching movies')
+    } finally {
       setLoading(false)
-    }, 1000)
-  }, [])
+    }
+  }
 
   const filteredMovies = movies.filter(movie =>
     movie.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     movie.overview.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleAddMovie = () => {
+  const handleAddMovie = async () => {
     if (!newMovie.title || !newMovie.overview) {
       toast.error('Please fill in required fields')
       return
     }
 
-    const movie: Movie = {
-      id: Date.now().toString(),
-      ...newMovie,
-      vote_count: 0,
-      status: 'active',
-      created_at: new Date().toISOString()
+    try {
+      const token = localStorage.getItem('adminToken')
+      if (!token) return
+
+      const response = await fetch('http://localhost:3000/api/admin/movies', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newMovie)
+      })
+
+      if (response.ok) {
+        const addedMovie = await response.json()
+        setMovies([addedMovie, ...movies])
+        setNewMovie({
+          title: '',
+          overview: '',
+          poster_path: '',
+          backdrop_path: '',
+          release_date: '',
+          vote_average: 0,
+          runtime: 0,
+          director: '',
+          movie_cast: '',
+          genres: ''
+        })
+        setShowAddModal(false)
+        toast.success('Movie added successfully')
+      } else {
+        toast.error('Failed to add movie')
+      }
+    } catch (error) {
+      console.error('Error adding movie:', error)
+      toast.error('Error adding movie')
     }
+  }
+
+  const handleUpdateMovie = async (movieId: string, updates: Partial<Movie>) => {
+    try {
+      const token = localStorage.getItem('adminToken')
+      if (!token) return
+
+      const response = await fetch(`http://localhost:3000/api/admin/movies/${movieId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updates)
+      })
+
+      if (response.ok) {
+        const updatedMovie = await response.json()
+        setMovies(movies.map(movie => 
+          movie.id === movieId ? updatedMovie : movie
+        ))
+        toast.success('Movie updated successfully')
+      } else {
+        toast.error('Failed to update movie')
+      }
+    } catch (error) {
+      console.error('Error updating movie:', error)
+      toast.error('Error updating movie')
+    }
+  }
+
+  const handleDeleteMovie = async (movieId: string) => {
+    if (!confirm('Are you sure you want to delete this movie? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('adminToken')
+      if (!token) return
+
+      const response = await fetch(`http://localhost:3000/api/admin/movies/${movieId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        setMovies(movies.filter(movie => movie.id !== movieId))
+        toast.success('Movie deleted successfully')
+      } else {
+        toast.error('Failed to delete movie')
+      }
+    } catch (error) {
+      console.error('Error deleting movie:', error)
+      toast.error('Error deleting movie')
+    }
+  }
 
     setMovies([movie, ...movies])
     setNewMovie({
@@ -121,13 +220,12 @@ export default function Movies() {
     }
   }
 
-  const toggleMovieStatus = (id: string) => {
-    setMovies(movies.map(movie => 
-      movie.id === id 
-        ? { ...movie, status: movie.status === 'active' ? 'inactive' : 'active' }
-        : movie
-    ))
-    toast.success('Movie status updated!')
+  const toggleMovieStatus = async (movieId: string) => {
+    const movie = movies.find(m => m.id === movieId);
+    if (!movie) return;
+
+    const newStatus = movie.status === 'published' ? 'archived' : 'published';
+    await handleUpdateMovie(movieId, { status: newStatus });
   }
 
   if (loading) {
@@ -214,7 +312,7 @@ export default function Movies() {
                   className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm transition-colors"
                 >
                   <EyeIcon className="h-4 w-4 inline mr-1" />
-                  {movie.status === 'active' ? 'Hide' : 'Show'}
+                  {movie.status === 'published' ? 'Archive' : 'Publish'}
                 </button>
                 <button
                   onClick={() => setEditingMovie(movie)}

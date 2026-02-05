@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { useAdminAuth } from "../contexts/AdminAuthContext";
+import { NETWORK_CONFIG } from "../config/network";
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,6 +26,29 @@ export default function AdminLoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const testConnection = async () => {
+    try {
+      Alert.alert('Testing Connection', 'Checking server connectivity...');
+      
+      const response = await fetch(`${NETWORK_CONFIG.API_BASE_URL}${NETWORK_CONFIG.HEALTH_ENDPOINT}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        Alert.alert('Connection Test', `✅ Server is reachable!\n\nStatus: ${data.status}\nEnvironment: ${data.environment || 'development'}`);
+      } else {
+        Alert.alert('Connection Test', `❌ Server responded with error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Connection test error:', error);
+      Alert.alert('Connection Test', `❌ Connection failed!\n\nError: ${error.message}\n\nPlease ensure:\n1. Backend server is running\n2. Device is on same network\n3. IP address is correct (${NETWORK_CONFIG.API_BASE_URL})`);
+    }
+  };
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -38,10 +62,18 @@ export default function AdminLoginScreen() {
       if (result.success) {
         router.replace('/(tabs)');
       } else {
-        Alert.alert('Login Failed', result.error || 'Invalid credentials');
+        // Show more specific error messages
+        let errorMessage = result.error || 'Invalid credentials';
+        if (errorMessage.includes('connection') || errorMessage.includes('network')) {
+          errorMessage = 'Connection failed. Please check your network connection and ensure the backend server is running.';
+        } else if (errorMessage.includes('Invalid credentials') || errorMessage.includes('Invalid admin credentials')) {
+          errorMessage = 'Invalid username or password. Please try:\n\nAdmin: admin / admin123\nModerator: moderator / mod123';
+        }
+        Alert.alert('Login Failed', errorMessage);
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      console.error('Login error:', error);
+      Alert.alert('Connection Error', 'Unable to connect to the server. Please ensure:\n\n1. Backend server is running on port 3000\n2. Your device is connected to the same network\n3. Firewall is not blocking the connection');
     } finally {
       setLoading(false);
     }
@@ -140,7 +172,7 @@ export default function AdminLoginScreen() {
 
             {/* Demo Credentials */}
             <View style={styles.demoContainer}>
-              <Text style={styles.demoTitle}>Demo Credentials:</Text>
+              <Text style={styles.demoTitle}>Admin Credentials:</Text>
               <View style={styles.demoCredentials}>
                 <View style={styles.demoRow}>
                   <Text style={styles.demoLabel}>Super Admin:</Text>
@@ -151,6 +183,14 @@ export default function AdminLoginScreen() {
                   <Text style={styles.demoValue}>moderator / mod123</Text>
                 </View>
               </View>
+              
+              {/* Connection Test Button */}
+              <TouchableOpacity
+                style={styles.testButton}
+                onPress={testConnection}
+              >
+                <Text style={styles.testButtonText}>Test Connection</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -297,6 +337,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#DBEAFE',
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  testButton: {
+    marginTop: 15,
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.4)',
+  },
+  testButtonText: {
+    color: '#4ADE80',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   footer: {
     marginTop: 40,

@@ -12,16 +12,16 @@ import toast from 'react-hot-toast'
 
 interface User {
   id: string
-  name: string
+  username: string
   email: string
-  avatar?: string
-  role: 'user' | 'premium' | 'admin'
-  status: 'active' | 'suspended' | 'banned'
+  first_name: string
+  last_name: string
+  role: 'user' | 'admin' | 'moderator'
+  is_active: boolean
   created_at: string
-  last_login?: string
+  updated_at: string
   total_favorites: number
   total_reviews: number
-  subscription_status?: 'free' | 'premium' | 'expired'
 }
 
 export default function Users() {
@@ -33,96 +33,145 @@ export default function Users() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [showUserModal, setShowUserModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalUsers, setTotalUsers] = useState(0)
 
-  // Mock data - replace with API calls
   useEffect(() => {
-    const mockUsers: User[] = [
-      {
-        id: '1',
-        name: 'John Doe',
-        email: 'john@example.com',
-        avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=3B82F6&color=fff',
-        role: 'premium',
-        status: 'active',
-        created_at: '2024-01-15T10:30:00Z',
-        last_login: '2024-02-01T14:22:00Z',
-        total_favorites: 25,
-        total_reviews: 12,
-        subscription_status: 'premium'
-      },
-      {
-        id: '2',
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        avatar: 'https://ui-avatars.com/api/?name=Jane+Smith&background=EF4444&color=fff',
-        role: 'user',
-        status: 'active',
-        created_at: '2024-01-20T09:15:00Z',
-        last_login: '2024-02-03T11:45:00Z',
-        total_favorites: 8,
-        total_reviews: 3,
-        subscription_status: 'free'
-      },
-      {
-        id: '3',
-        name: 'Mike Johnson',
-        email: 'mike@example.com',
-        avatar: 'https://ui-avatars.com/api/?name=Mike+Johnson&background=10B981&color=fff',
-        role: 'admin',
-        status: 'active',
-        created_at: '2024-01-10T16:20:00Z',
-        last_login: '2024-02-04T08:30:00Z',
-        total_favorites: 45,
-        total_reviews: 28,
-        subscription_status: 'premium'
-      },
-      {
-        id: '4',
-        name: 'Sarah Wilson',
-        email: 'sarah@example.com',
-        role: 'user',
-        status: 'suspended',
-        created_at: '2024-01-25T12:10:00Z',
-        last_login: '2024-01-30T19:15:00Z',
-        total_favorites: 2,
-        total_reviews: 0,
-        subscription_status: 'free'
+    fetchUsers()
+  }, [currentPage, searchTerm])
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      const token = localStorage.getItem('adminToken')
+      if (!token) return
+
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '20'
+      })
+
+      if (searchTerm) {
+        params.append('search', searchTerm)
       }
-    ]
-    
-    setTimeout(() => {
-      setUsers(mockUsers)
+
+      const response = await fetch(`http://localhost:3000/api/admin/users?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setUsers(data.users)
+        setTotalPages(data.totalPages)
+        setTotalUsers(data.total)
+      } else {
+        toast.error('Failed to fetch users')
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      toast.error('Error fetching users')
+    } finally {
       setLoading(false)
-    }, 1000)
-  }, [])
+    }
+  }
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesRole = filterRole === 'all' || user.role === filterRole
-    const matchesStatus = filterStatus === 'all' || user.status === filterStatus
+    const matchesStatus = filterStatus === 'all' || 
+      (filterStatus === 'active' && user.is_active) ||
+      (filterStatus === 'inactive' && !user.is_active)
     
-    return matchesSearch && matchesRole && matchesStatus
+    return matchesRole && matchesStatus
   })
 
-  const handleStatusChange = (userId: string, newStatus: User['status']) => {
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, status: newStatus } : user
-    ))
-    toast.success(`User status updated to ${newStatus}`)
+  const handleStatusChange = async (userId: string, isActive: boolean) => {
+    try {
+      const token = localStorage.getItem('adminToken')
+      if (!token) return
+
+      const response = await fetch(`http://localhost:3000/api/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ is_active: isActive })
+      })
+
+      if (response.ok) {
+        const updatedUser = await response.json()
+        setUsers(users.map(user => 
+          user.id === userId ? updatedUser : user
+        ))
+        toast.success(`User ${isActive ? 'activated' : 'deactivated'} successfully`)
+      } else {
+        toast.error('Failed to update user status')
+      }
+    } catch (error) {
+      console.error('Error updating user status:', error)
+      toast.error('Error updating user status')
+    }
   }
 
-  const handleRoleChange = (userId: string, newRole: User['role']) => {
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, role: newRole } : user
-    ))
-    toast.success(`User role updated to ${newRole}`)
+  const handleRoleChange = async (userId: string, newRole: User['role']) => {
+    try {
+      const token = localStorage.getItem('adminToken')
+      if (!token) return
+
+      const response = await fetch(`http://localhost:3000/api/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ role: newRole })
+      })
+
+      if (response.ok) {
+        const updatedUser = await response.json()
+        setUsers(users.map(user => 
+          user.id === userId ? updatedUser : user
+        ))
+        toast.success(`User role updated to ${newRole}`)
+      } else {
+        toast.error('Failed to update user role')
+      }
+    } catch (error) {
+      console.error('Error updating user role:', error)
+      toast.error('Error updating user role')
+    }
   }
 
-  const handleDeleteUser = (userId: string) => {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      setUsers(users.filter(user => user.id !== userId))
-      toast.success('User deleted successfully')
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('adminToken')
+      if (!token) return
+
+      const response = await fetch(`http://localhost:3000/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        setUsers(users.filter(user => user.id !== userId))
+        toast.success('User deleted successfully')
+      } else {
+        toast.error('Failed to delete user')
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      toast.error('Error deleting user')
     }
   }
 

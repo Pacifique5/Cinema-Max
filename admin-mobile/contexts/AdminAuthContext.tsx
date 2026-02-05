@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as SecureStore from 'expo-secure-store'
+import { NETWORK_CONFIG } from '../config/network'
 
 interface AdminUser {
   id: string
@@ -32,7 +33,7 @@ export const useAdminAuth = () => {
   return context
 }
 
-const API_BASE_URL = 'http://localhost:3000' // Update this for production
+const API_BASE_URL = NETWORK_CONFIG.API_BASE_URL
 
 // Permission mapping based on role
 const getPermissionsByRole = (role: string): string[] => {
@@ -136,7 +137,15 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     } catch (error) {
       console.error('Login error:', error)
-      return { success: false, error: 'Login failed. Please check your connection and try again.' }
+      let errorMessage = 'Login failed. Please check your connection and try again.'
+      
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        errorMessage = 'Network connection failed. Please ensure the backend server is running and accessible.'
+      } else if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage = 'Unable to connect to server. Please check your network connection.'
+      }
+      
+      return { success: false, error: errorMessage }
     } finally {
       setIsLoading(false)
     }

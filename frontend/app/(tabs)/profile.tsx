@@ -2,23 +2,25 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert, Mod
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, profile, isGuest, signOut, updateProfile, toggleDarkMode, addToFavorites, removeFromFavorites, getFavorites } = useAuth();
+  const { user, isGuest, signOut, updateProfile, addToFavorites, removeFromFavorites, getFavorites } = useAuth();
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editName, setEditName] = useState(profile?.name || '');
-  const [editEmail, setEditEmail] = useState(profile?.email || '');
+  const [editFirstName, setEditFirstName] = useState(user?.first_name || '');
+  const [editLastName, setEditLastName] = useState(user?.last_name || '');
+  const [editEmail, setEditEmail] = useState(user?.email || '');
   const [favorites, setFavorites] = useState<string[]>([]);
 
   useEffect(() => {
-    if (profile) {
-      setEditName(profile.name);
-      setEditEmail(profile.email);
+    if (user) {
+      setEditFirstName(user.first_name);
+      setEditLastName(user.last_name);
+      setEditEmail(user.email);
     }
-  }, [profile]);
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -199,14 +201,14 @@ export default function ProfileScreen() {
         {/* User Info */}
         <View style={styles.userSection}>
           <View style={styles.avatarContainer}>
-            <Image source={{ uri: profile?.avatar_url }} style={styles.avatar} />
+            <Image source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent((user?.first_name || '') + ' ' + (user?.last_name || ''))}&background=FF6B6B&color=fff&size=150` }} style={styles.avatar} />
             <TouchableOpacity style={styles.editAvatarButton}>
               <Ionicons name="camera" size={16} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.userName}>{profile?.name}</Text>
-          <Text style={styles.userEmail}>{profile?.email}</Text>
-          <Text style={styles.memberSince}>Member since {profile?.member_since ? new Date(profile.member_since).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently'}</Text>
+          <Text style={styles.userName}>{user?.first_name} {user?.last_name}</Text>
+          <Text style={styles.userEmail}>{user?.email}</Text>
+          <Text style={styles.memberSince}>Member since {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently'}</Text>
           
           <TouchableOpacity 
             style={styles.editProfileButton}
