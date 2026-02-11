@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
+import Image from 'next/image'
 import { 
   FilmIcon, 
   PlayIcon, 
@@ -14,19 +15,87 @@ import {
   BoltIcon,
   ShieldCheckIcon,
   CheckCircleIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline'
+
+interface Movie {
+  id: string
+  title: string
+  poster_path: string
+  backdrop_path: string
+  vote_average: number
+  release_date: string
+}
 
 export default function LandingPage() {
   const { user, isGuest } = useAuth()
   const router = useRouter()
   const [email, setEmail] = useState('')
+  const [trendingMovies, setTrendingMovies] = useState<Movie[]>([])
+  const [featuredMovie, setFeaturedMovie] = useState<Movie | null>(null)
+  const [stats, setStats] = useState({
+    totalMovies: 0,
+    totalUsers: 0,
+    rating: 4.8
+  })
 
   useEffect(() => {
     if (user && !isGuest) {
       router.push('/home')
     }
+    fetchMovies()
+    fetchStats()
   }, [user, isGuest, router])
+
+  const fetchMovies = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/movies`)
+      if (response.ok) {
+        const data = await response.json()
+        // Get top 6 movies by rating
+        const topMovies = data
+          .sort((a: Movie, b: Movie) => b.vote_average - a.vote_average)
+          .slice(0, 6)
+        setTrendingMovies(topMovies)
+        
+        // Set a random featured movie from top rated
+        if (data.length > 0) {
+          const topRated = data
+            .sort((a: Movie, b: Movie) => b.vote_average - a.vote_average)
+            .slice(0, 5)
+          setFeaturedMovie(topRated[Math.floor(Math.random() * topRated.length)])
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching movies:', error)
+    }
+  }
+
+  const fetchStats = async () => {
+    try {
+      const [moviesRes, usersRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/movies`),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`
+          }
+        }).catch(() => null)
+      ])
+
+      if (moviesRes.ok) {
+        const movies = await moviesRes.json()
+        setStats(prev => ({ ...prev, totalMovies: movies.length }))
+      }
+
+      if (usersRes && usersRes.ok) {
+        const data = await usersRes.json()
+        setStats(prev => ({ ...prev, totalUsers: data.total_users || 1000 }))
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    }
+  }
 
   const handleGetStarted = (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,34 +126,76 @@ export default function LandingPage() {
 
       {/* Hero Section with Video Background Effect */}
       <div className="relative h-screen">
-        {/* Animated Background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-red-900/20 to-black"></div>
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-0 left-0 w-96 h-96 bg-red-600 rounded-full filter blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-600 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
+        {/* Featured Movie Background */}
+        {featuredMovie && (
+          <div className="absolute inset-0">
+            <div 
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${process.env.NEXT_PUBLIC_TMDB_IMAGE_BASE}/original${featuredMovie.backdrop_path})`,
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/50"></div>
+            </div>
           </div>
-          {/* Grid Pattern */}
-          <div className="absolute inset-0 opacity-10" style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px)',
-            backgroundSize: '50px 50px'
-          }}></div>
-        </div>
+        )}
+
+        {/* Fallback Animated Background */}
+        {!featuredMovie && (
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-red-900/20 to-black"></div>
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-0 left-0 w-96 h-96 bg-red-600 rounded-full filter blur-3xl animate-pulse"></div>
+              <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-600 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
+            </div>
+            <div className="absolute inset-0 opacity-10" style={{
+              backgroundImage: 'linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px)',
+              backgroundSize: '50px 50px'
+            }}></div>
+          </div>
+        )}
 
         {/* Hero Content */}
         <div className="relative z-10 h-full flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-            <div className="text-center max-w-4xl mx-auto">
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 leading-tight animate-fade-in">
-                Unlimited <span className="text-red-600">Movies</span>,<br />
-                TV Shows & More
-              </h1>
-              <p className="text-xl md:text-2xl text-gray-300 mb-8 animate-fade-in-delay">
-                Watch anywhere. Cancel anytime. Start your free trial today.
-              </p>
+            <div className="max-w-4xl">
+              {featuredMovie ? (
+                <>
+                  <div className="flex items-center space-x-2 mb-4 animate-fade-in">
+                    <SparklesIcon className="h-6 w-6 text-yellow-400" />
+                    <span className="text-yellow-400 font-semibold uppercase tracking-wide">Featured Movie</span>
+                  </div>
+                  <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 leading-tight animate-fade-in">
+                    {featuredMovie.title}
+                  </h1>
+                  <div className="flex items-center space-x-4 mb-6 animate-fade-in-delay">
+                    <div className="flex items-center bg-yellow-500 px-3 py-1 rounded-full">
+                      <StarIcon className="h-5 w-5 text-white mr-1" />
+                      <span className="text-white font-bold">{featuredMovie.vote_average.toFixed(1)}</span>
+                    </div>
+                    <span className="text-gray-300 text-lg">
+                      {new Date(featuredMovie.release_date).getFullYear()}
+                    </span>
+                  </div>
+                  <p className="text-xl md:text-2xl text-gray-300 mb-8 animate-fade-in-delay">
+                    Watch this and thousands more. Start your journey today.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 leading-tight animate-fade-in">
+                    Unlimited <span className="text-red-600">Movies</span>,<br />
+                    TV Shows & More
+                  </h1>
+                  <p className="text-xl md:text-2xl text-gray-300 mb-8 animate-fade-in-delay">
+                    Watch anywhere. Cancel anytime. Start your free trial today.
+                  </p>
+                </>
+              )}
               
               {/* Email Signup Form */}
-              <form onSubmit={handleGetStarted} className="max-w-2xl mx-auto mb-8 animate-fade-in-delay-2">
+              <form onSubmit={handleGetStarted} className="max-w-2xl mb-8 animate-fade-in-delay-2">
                 <div className="flex flex-col sm:flex-row gap-4">
                   <input
                     type="email"
@@ -95,7 +206,7 @@ export default function LandingPage() {
                   />
                   <button
                     type="submit"
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-lg"
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-lg shadow-lg hover:shadow-red-600/50"
                   >
                     <span>Get Started</span>
                     <ChevronRightIcon className="h-5 w-5" />
@@ -103,12 +214,23 @@ export default function LandingPage() {
                 </div>
               </form>
 
-              <button
-                onClick={() => router.push('/home')}
-                className="text-gray-300 hover:text-white transition-colors underline text-lg"
-              >
-                or continue as guest
-              </button>
+              <div className="flex items-center space-x-6">
+                <button
+                  onClick={() => router.push('/home')}
+                  className="text-gray-300 hover:text-white transition-colors underline text-lg"
+                >
+                  or continue as guest
+                </button>
+                {featuredMovie && (
+                  <Link
+                    href={`/movie/${featuredMovie.id}`}
+                    className="flex items-center space-x-2 text-white hover:text-red-400 transition-colors"
+                  >
+                    <PlayIcon className="h-5 w-5" />
+                    <span>Watch Trailer</span>
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -124,21 +246,62 @@ export default function LandingPage() {
       {/* Trending Section */}
       <div className="bg-black py-20 border-t border-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-12">Trending Now</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="group cursor-pointer">
-                <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg overflow-hidden transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <PlayIcon className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex justify-between items-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white">Trending Now</h2>
+            <Link href="/home" className="text-red-500 hover:text-red-400 flex items-center space-x-2">
+              <span>View All</span>
+              <ChevronRightIcon className="h-5 w-5" />
+            </Link>
+          </div>
+          
+          {trendingMovies.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {trendingMovies.map((movie, i) => (
+                <Link 
+                  key={movie.id}
+                  href={`/movie/${movie.id}`}
+                  className="group cursor-pointer"
+                >
+                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl group-hover:shadow-red-600/30">
+                    <img
+                      src={`${process.env.NEXT_PUBLIC_TMDB_IMAGE_BASE}/w500${movie.poster_path}`}
+                      alt={movie.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <PlayIcon className="h-16 w-16 text-white drop-shadow-lg" />
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <h3 className="text-white font-semibold text-sm mb-1 line-clamp-2">
+                          {movie.title}
+                        </h3>
+                        <div className="flex items-center">
+                          <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
+                          <span className="text-white text-sm">{movie.vote_average.toFixed(1)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
+                      #{i + 1}
+                    </div>
                   </div>
-                  <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
-                    #{i}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="group cursor-pointer">
+                  <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg overflow-hidden animate-pulse">
+                    <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
+                      #{i}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
