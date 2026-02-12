@@ -1,23 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { 
   FilmIcon, 
   PlayIcon, 
-  StarIcon, 
-  TvIcon,
+  StarIcon,
   DevicePhoneMobileIcon,
-  GlobeAltIcon,
-  BoltIcon,
-  ShieldCheckIcon,
-  CheckCircleIcon,
-  ChevronRightIcon,
-  SparklesIcon
+  TvIcon,
+  ComputerDesktopIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline'
+import toast from 'react-hot-toast'
 
 interface Movie {
   id: string
@@ -25,599 +22,444 @@ interface Movie {
   poster_path: string
   backdrop_path: string
   vote_average: number
-  release_date: string
+  overview: string
 }
 
 export default function LandingPage() {
-  const { user, isGuest } = useAuth()
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [trendingMovies, setTrendingMovies] = useState<Movie[]>([])
-  const [featuredMovie, setFeaturedMovie] = useState<Movie | null>(null)
-  const [stats, setStats] = useState({
-    totalMovies: 0,
-    totalUsers: 0,
-    rating: 4.8
-  })
+  const [featuredMovies, setFeaturedMovies] = useState<Movie[]>([])
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   useEffect(() => {
-    if (user && !isGuest) {
-      router.push('/home')
-    }
-    fetchMovies()
-    fetchStats()
-  }, [user, isGuest, router])
+    fetchFeaturedMovies()
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % 3)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [])
 
-  const fetchMovies = async () => {
+  const fetchFeaturedMovies = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/movies`)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/movies?limit=6`)
       if (response.ok) {
         const data = await response.json()
-        // Get top 6 movies by rating
-        const topMovies = data
-          .sort((a: Movie, b: Movie) => b.vote_average - a.vote_average)
-          .slice(0, 6)
-        setTrendingMovies(topMovies)
-        
-        // Set a random featured movie from top rated
-        if (data.length > 0) {
-          const topRated = data
-            .sort((a: Movie, b: Movie) => b.vote_average - a.vote_average)
-            .slice(0, 5)
-          setFeaturedMovie(topRated[Math.floor(Math.random() * topRated.length)])
-        }
+        setFeaturedMovies(data.movies || [])
       }
     } catch (error) {
       console.error('Error fetching movies:', error)
     }
   }
 
-  const fetchStats = async () => {
-    try {
-      const [moviesRes, usersRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/movies`),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`
-          }
-        }).catch(() => null)
-      ])
-
-      if (moviesRes.ok) {
-        const movies = await moviesRes.json()
-        setStats(prev => ({ ...prev, totalMovies: movies.length }))
-      }
-
-      if (usersRes && usersRes.ok) {
-        const data = await usersRes.json()
-        setStats(prev => ({ ...prev, totalUsers: data.total_users || 1000 }))
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error)
+  const faqs = [
+    {
+      question: "What is CinemaMax?",
+      answer: "CinemaMax is your ultimate streaming destination for movies and entertainment. Watch thousands of movies, from classics to the latest releases, all in stunning HD quality."
+    },
+    {
+      question: "How much does CinemaMax cost?",
+      answer: "We offer flexible plans starting from $9.99/month for Basic, $14.99/month for Standard, and $19.99/month for Premium. All plans include unlimited streaming with no ads."
+    },
+    {
+      question: "Where can I watch?",
+      answer: "Watch anywhere, anytime. Stream on your smartphone, tablet, laptop, smart TV, and gaming console. Download your favorite movies to watch offline on mobile devices."
+    },
+    {
+      question: "Can I download movies to watch offline?",
+      answer: "Yes! With our Standard and Premium plans, you can download unlimited movies to watch offline on your mobile devices. Perfect for travel or areas with limited internet."
+    },
+    {
+      question: "How do I cancel?",
+      answer: "CinemaMax is flexible. No contracts, no cancellation fees, no commitments. You can easily cancel your account online in just two clicks. Your account will remain active until the end of your billing period."
+    },
+    {
+      question: "What can I watch on CinemaMax?",
+      answer: "CinemaMax has an extensive library of feature films, documentaries, and exclusive content. Our catalog is constantly updated with new releases and timeless classics across all genres."
     }
-  }
+  ]
 
-  const handleGetStarted = (e: React.FormEvent) => {
-    e.preventDefault()
-    router.push('/auth/signup')
-  }
+  const features = [
+    {
+      icon: <DevicePhoneMobileIcon className="h-12 w-12" />,
+      title: "Watch on Mobile",
+      description: "Stream on your phone or tablet with our mobile app"
+    },
+    {
+      icon: <TvIcon className="h-12 w-12" />,
+      title: "Watch on TV",
+      description: "Enjoy on your smart TV, streaming device, or gaming console"
+    },
+    {
+      icon: <ComputerDesktopIcon className="h-12 w-12" />,
+      title: "Watch on Computer",
+      description: "Stream directly from your browser on any computer"
+    }
+  ]
+
+  const plans = [
+    {
+      name: "Basic",
+      price: "$9.99",
+      features: [
+        "Unlimited movies and shows",
+        "Watch on 1 device at a time",
+        "HD available",
+        "Cancel anytime"
+      ]
+    },
+    {
+      name: "Standard",
+      price: "$14.99",
+      popular: true,
+      features: [
+        "Unlimited movies and shows",
+        "Watch on 2 devices at a time",
+        "Full HD available",
+        "Download on 2 devices",
+        "Cancel anytime"
+      ]
+    },
+    {
+      name: "Premium",
+      price: "$19.99",
+      features: [
+        "Unlimited movies and shows",
+        "Watch on 4 devices at a time",
+        "Ultra HD + HDR available",
+        "Download on 4 devices",
+        "Premium audio",
+        "Cancel anytime"
+      ]
+    }
+  ]
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black to-transparent">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center space-x-2">
-              <FilmIcon className="h-10 w-10 text-red-600" />
-              <span className="text-3xl font-bold text-red-600">CinemaMax</span>
+      {/* Hero Section with Slideshow */}
+      <div className="relative h-screen overflow-hidden">
+        {/* Background Slideshow */}
+        <div className="absolute inset-0">
+          {featuredMovies.slice(0, 3).map((movie, index) => (
+            <div
+              key={movie.id}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                index === currentSlide ? 'opacity-100' : 'opacity-0'
+              }`}
+              style={{
+                backgroundImage: `url(${process.env.NEXT_PUBLIC_TMDB_IMAGE_BASE}/original${movie.backdrop_path})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/50"></div>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link 
-                href="/auth/login" 
-                className="text-white hover:text-gray-300 transition-colors font-medium"
+          ))}
+        </div>
+
+        {/* Navigation */}
+        <nav className="relative z-20 flex items-center justify-between px-8 py-6">
+          <div className="flex items-center space-x-2">
+            <FilmIcon className="h-10 w-10 text-red-600" />
+            <span className="text-3xl font-bold text-white">CinemaMax</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Link
+              href="/auth/login"
+              className="text-white hover:text-gray-300 font-semibold transition-colors"
+            >
+              Sign In
+            </Link>
+          </div>
+        </nav>
+
+        {/* Hero Content */}
+        <div className="relative z-10 flex items-center h-full px-8 max-w-7xl mx-auto">
+          <div className="max-w-2xl">
+            <h1 className="text-6xl md:text-7xl font-bold text-white mb-6 leading-tight">
+              Unlimited movies, TV shows, and more
+            </h1>
+            <p className="text-2xl text-white mb-4">
+              Watch anywhere. Cancel anytime.
+            </p>
+            <p className="text-xl text-gray-300 mb-8">
+              Ready to watch? Enter your email to create or restart your membership.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link
+                href="/auth/signup"
+                className="bg-red-600 hover:bg-red-700 text-white text-xl font-bold py-4 px-10 rounded-lg transition-all transform hover:scale-105 shadow-2xl flex items-center justify-center space-x-2"
+              >
+                <span>Get Started</span>
+                <PlayIcon className="h-6 w-6" />
+              </Link>
+              <Link
+                href="/auth/login"
+                className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white text-xl font-bold py-4 px-10 rounded-lg transition-all border-2 border-white/30 flex items-center justify-center"
               >
                 Sign In
               </Link>
             </div>
           </div>
         </div>
-      </nav>
 
-      {/* Hero Section with Video Background Effect */}
-      <div className="relative h-screen">
-        {/* Featured Movie Background */}
-        {featuredMovie && (
-          <div className="absolute inset-0">
-            <div 
-              className="absolute inset-0 bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${process.env.NEXT_PUBLIC_TMDB_IMAGE_BASE}/original${featuredMovie.backdrop_path})`,
-              }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/50"></div>
-            </div>
-          </div>
-        )}
+        {/* Slide Indicators */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 flex space-x-2">
+          {[0, 1, 2].map((index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-3 h-3 rounded-full transition-all ${
+                index === currentSlide ? 'bg-red-600 w-8' : 'bg-white/50'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
 
-        {/* Fallback Animated Background */}
-        {!featuredMovie && (
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-red-900/20 to-black"></div>
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute top-0 left-0 w-96 h-96 bg-red-600 rounded-full filter blur-3xl animate-pulse"></div>
-              <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-600 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
-            </div>
-            <div className="absolute inset-0 opacity-10" style={{
-              backgroundImage: 'linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px)',
-              backgroundSize: '50px 50px'
-            }}></div>
-          </div>
-        )}
-
-        {/* Hero Content */}
-        <div className="relative z-10 h-full flex items-center">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-            <div className="max-w-4xl">
-              {featuredMovie ? (
-                <>
-                  <div className="flex items-center space-x-2 mb-4 animate-fade-in">
-                    <SparklesIcon className="h-6 w-6 text-yellow-400" />
-                    <span className="text-yellow-400 font-semibold uppercase tracking-wide">Featured Movie</span>
-                  </div>
-                  <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 leading-tight animate-fade-in">
-                    {featuredMovie.title}
-                  </h1>
-                  <div className="flex items-center space-x-4 mb-6 animate-fade-in-delay">
-                    <div className="flex items-center bg-yellow-500 px-3 py-1 rounded-full">
-                      <StarIcon className="h-5 w-5 text-white mr-1" />
-                      <span className="text-white font-bold">{featuredMovie.vote_average.toFixed(1)}</span>
+      {/* Trending Movies Section */}
+      <div className="py-20 bg-gradient-to-b from-black to-gray-900">
+        <div className="max-w-7xl mx-auto px-8">
+          <h2 className="text-4xl font-bold text-white mb-12 text-center">
+            Trending Now
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {featuredMovies.map((movie) => (
+              <div
+                key={movie.id}
+                className="group relative overflow-hidden rounded-lg shadow-xl transition-transform duration-300 hover:scale-105 cursor-pointer"
+              >
+                <img
+                  src={`${process.env.NEXT_PUBLIC_TMDB_IMAGE_BASE}/w500${movie.poster_path}`}
+                  alt={movie.title}
+                  className="w-full h-auto"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h3 className="text-white font-bold text-sm mb-1 line-clamp-2">
+                      {movie.title}
+                    </h3>
+                    <div className="flex items-center">
+                      <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
+                      <span className="text-white text-sm">
+                        {movie.vote_average ? Number(movie.vote_average).toFixed(1) : 'N/A'}
+                      </span>
                     </div>
-                    <span className="text-gray-300 text-lg">
-                      {new Date(featuredMovie.release_date).getFullYear()}
-                    </span>
                   </div>
-                  <p className="text-xl md:text-2xl text-gray-300 mb-8 animate-fade-in-delay">
-                    Watch this and thousands more. Start your journey today.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 leading-tight animate-fade-in">
-                    Unlimited <span className="text-red-600">Movies</span>,<br />
-                    TV Shows & More
-                  </h1>
-                  <p className="text-xl md:text-2xl text-gray-300 mb-8 animate-fade-in-delay">
-                    Watch anywhere. Cancel anytime. Start your free trial today.
-                  </p>
-                </>
-              )}
-              
-              {/* Email Signup Form */}
-              <form onSubmit={handleGetStarted} className="max-w-2xl mb-8 animate-fade-in-delay-2">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Email address"
-                    className="flex-1 px-6 py-4 rounded-lg bg-white/10 backdrop-blur-sm border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent text-lg"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-lg shadow-lg hover:shadow-red-600/50"
-                  >
-                    <span>Get Started</span>
-                    <ChevronRightIcon className="h-5 w-5" />
-                  </button>
                 </div>
-              </form>
-
-              <div className="flex items-center space-x-6">
-                <button
-                  onClick={() => router.push('/home')}
-                  className="text-gray-300 hover:text-white transition-colors underline text-lg"
-                >
-                  or continue as guest
-                </button>
-                {featuredMovie && (
-                  <Link
-                    href={`/movie/${featuredMovie.id}`}
-                    className="flex items-center space-x-2 text-white hover:text-red-400 transition-colors"
-                  >
-                    <PlayIcon className="h-5 w-5" />
-                    <span>Watch Trailer</span>
-                  </Link>
-                )}
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-gray-600 rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-gray-600 rounded-full mt-2 animate-pulse"></div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Trending Section */}
-      <div className="bg-black py-20 border-t border-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white">Trending Now</h2>
-            <Link href="/home" className="text-red-500 hover:text-red-400 flex items-center space-x-2">
-              <span>View All</span>
-              <ChevronRightIcon className="h-5 w-5" />
-            </Link>
-          </div>
-          
-          {trendingMovies.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {trendingMovies.map((movie, i) => (
-                <Link 
-                  key={movie.id}
-                  href={`/movie/${movie.id}`}
-                  className="group cursor-pointer"
-                >
-                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl group-hover:shadow-red-600/30">
-                    <img
-                      src={`${process.env.NEXT_PUBLIC_TMDB_IMAGE_BASE}/w500${movie.poster_path}`}
-                      alt={movie.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <PlayIcon className="h-16 w-16 text-white drop-shadow-lg" />
-                      </div>
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <h3 className="text-white font-semibold text-sm mb-1 line-clamp-2">
-                          {movie.title}
-                        </h3>
-                        <div className="flex items-center">
-                          <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
-                          <span className="text-white text-sm">{movie.vote_average.toFixed(1)}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
-                      #{i + 1}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="group cursor-pointer">
-                  <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg overflow-hidden animate-pulse">
-                    <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
-                      #{i}
-                    </div>
-                  </div>
+      {/* Features Section */}
+      <div className="py-20 bg-gray-900">
+        <div className="max-w-7xl mx-auto px-8">
+          <h2 className="text-4xl font-bold text-white mb-16 text-center">
+            Watch Everywhere
+          </h2>
+          <div className="grid md:grid-cols-3 gap-12">
+            {features.map((feature, index) => (
+              <div key={index} className="text-center">
+                <div className="flex justify-center mb-6 text-red-600">
+                  {feature.icon}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Features Section - Netflix Style */}
-      <div className="bg-black">
-        {/* Feature 1 */}
-        <div className="border-t border-gray-900">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div>
-                <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                  Enjoy on your TV
-                </h2>
-                <p className="text-xl text-gray-400">
-                  Watch on Smart TVs, PlayStation, Xbox, Chromecast, Apple TV, Blu-ray players, and more.
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-400 text-lg">
+                  {feature.description}
                 </p>
               </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Download Section */}
+      <div className="py-20 bg-black">
+        <div className="max-w-7xl mx-auto px-8">
+          <div className="flex flex-col md:flex-row items-center gap-12">
+            <div className="flex-1">
+              <h2 className="text-5xl font-bold text-white mb-6">
+                Download your shows to watch offline
+              </h2>
+              <p className="text-xl text-gray-300 mb-6">
+                Save your favorites easily and always have something to watch.
+              </p>
+              <ul className="space-y-4">
+                <li className="flex items-center text-white text-lg">
+                  <CheckIcon className="h-6 w-6 text-green-500 mr-3" />
+                  Download on mobile and tablet
+                </li>
+                <li className="flex items-center text-white text-lg">
+                  <CheckIcon className="h-6 w-6 text-green-500 mr-3" />
+                  Watch offline anytime
+                </li>
+                <li className="flex items-center text-white text-lg">
+                  <CheckIcon className="h-6 w-6 text-green-500 mr-3" />
+                  Unlimited downloads with Premium
+                </li>
+              </ul>
+            </div>
+            <div className="flex-1">
               <div className="relative">
-                <div className="relative z-10 bg-gradient-to-br from-red-600/20 to-purple-600/20 rounded-2xl p-12 backdrop-blur-sm border border-gray-800">
-                  <TvIcon className="h-48 w-48 text-red-600 mx-auto" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Feature 2 */}
-        <div className="border-t border-gray-900">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div className="order-2 md:order-1 relative">
-                <div className="relative z-10 bg-gradient-to-br from-blue-600/20 to-cyan-600/20 rounded-2xl p-12 backdrop-blur-sm border border-gray-800">
-                  <DevicePhoneMobileIcon className="h-48 w-48 text-blue-600 mx-auto" />
-                </div>
-              </div>
-              <div className="order-1 md:order-2">
-                <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                  Download your shows to watch offline
-                </h2>
-                <p className="text-xl text-gray-400">
-                  Save your favorites easily and always have something to watch.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Feature 3 */}
-        <div className="border-t border-gray-900">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div>
-                <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                  Watch everywhere
-                </h2>
-                <p className="text-xl text-gray-400">
-                  Stream unlimited movies and TV shows on your phone, tablet, laptop, and TV.
-                </p>
-              </div>
-              <div className="relative">
-                <div className="relative z-10 bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-2xl p-12 backdrop-blur-sm border border-gray-800">
-                  <GlobeAltIcon className="h-48 w-48 text-purple-600 mx-auto" />
-                </div>
+                <DevicePhoneMobileIcon className="h-96 w-96 text-red-600 mx-auto" />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Pricing Plans */}
-      <div className="bg-black border-t border-gray-900 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Choose the plan that's right for you
-            </h2>
-            <p className="text-xl text-gray-400">
-              Join today and watch on all your devices
-            </p>
-          </div>
-
+      {/* Pricing Section */}
+      <div className="py-20 bg-gradient-to-b from-gray-900 to-black">
+        <div className="max-w-7xl mx-auto px-8">
+          <h2 className="text-4xl font-bold text-white mb-4 text-center">
+            Choose the plan that's right for you
+          </h2>
+          <p className="text-xl text-gray-400 mb-12 text-center">
+            Upgrade, downgrade, or cancel anytime
+          </p>
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Basic Plan */}
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 border border-gray-700 hover:border-red-600 transition-all duration-300 transform hover:scale-105">
-              <h3 className="text-2xl font-bold text-white mb-4">Basic</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">$9.99</span>
-                <span className="text-gray-400">/month</span>
+            {plans.map((plan, index) => (
+              <div
+                key={index}
+                className={`relative rounded-2xl p-8 ${
+                  plan.popular
+                    ? 'bg-gradient-to-b from-red-600 to-red-700 transform scale-105'
+                    : 'bg-gray-800'
+                }`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black text-sm font-bold px-4 py-1 rounded-full">
+                    MOST POPULAR
+                  </div>
+                )}
+                <h3 className="text-3xl font-bold text-white mb-4">{plan.name}</h3>
+                <div className="mb-6">
+                  <span className="text-5xl font-bold text-white">{plan.price}</span>
+                  <span className="text-gray-300">/month</span>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  {plan.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start text-white">
+                      <CheckIcon className="h-6 w-6 text-green-400 mr-3 flex-shrink-0 mt-0.5" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/auth/signup"
+                  className={`block w-full text-center py-3 rounded-lg font-bold transition-all ${
+                    plan.popular
+                      ? 'bg-white text-red-600 hover:bg-gray-100'
+                      : 'bg-red-600 text-white hover:bg-red-700'
+                  }`}
+                >
+                  Get Started
+                </Link>
               </div>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center text-gray-300">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                  HD Quality
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                  Watch on 1 device
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                  Unlimited movies & TV shows
-                </li>
-              </ul>
-              <button className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-lg transition-colors">
-                Choose Basic
-              </button>
-            </div>
-
-            {/* Standard Plan */}
-            <div className="bg-gradient-to-br from-red-900 to-red-800 rounded-2xl p-8 border-2 border-red-600 transform scale-105 shadow-2xl">
-              <div className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full inline-block mb-4">
-                MOST POPULAR
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-4">Standard</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">$14.99</span>
-                <span className="text-gray-300">/month</span>
-              </div>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center text-white">
-                  <CheckCircleIcon className="h-5 w-5 text-green-400 mr-3" />
-                  Full HD Quality
-                </li>
-                <li className="flex items-center text-white">
-                  <CheckCircleIcon className="h-5 w-5 text-green-400 mr-3" />
-                  Watch on 2 devices
-                </li>
-                <li className="flex items-center text-white">
-                  <CheckCircleIcon className="h-5 w-5 text-green-400 mr-3" />
-                  Unlimited movies & TV shows
-                </li>
-                <li className="flex items-center text-white">
-                  <CheckCircleIcon className="h-5 w-5 text-green-400 mr-3" />
-                  Download on 2 devices
-                </li>
-              </ul>
-              <button className="w-full bg-white hover:bg-gray-100 text-red-600 font-bold py-3 rounded-lg transition-colors">
-                Choose Standard
-              </button>
-            </div>
-
-            {/* Premium Plan */}
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 border border-gray-700 hover:border-red-600 transition-all duration-300 transform hover:scale-105">
-              <h3 className="text-2xl font-bold text-white mb-4">Premium</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">$19.99</span>
-                <span className="text-gray-400">/month</span>
-              </div>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center text-gray-300">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                  4K + HDR Quality
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                  Watch on 4 devices
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                  Unlimited movies & TV shows
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                  Download on 4 devices
-                </li>
-              </ul>
-              <button className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-lg transition-colors">
-                Choose Premium
-              </button>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* FAQ Section */}
-      <div className="bg-black border-t border-gray-900 py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl md:text-5xl font-bold text-white text-center mb-12">
+      <div className="py-20 bg-black">
+        <div className="max-w-4xl mx-auto px-8">
+          <h2 className="text-4xl font-bold text-white mb-12 text-center">
             Frequently Asked Questions
           </h2>
           <div className="space-y-4">
-            {[
-              {
-                q: "What is CinemaMax?",
-                a: "CinemaMax is a streaming service that offers a wide variety of award-winning TV shows, movies, anime, documentaries, and more on thousands of internet-connected devices."
-              },
-              {
-                q: "How much does CinemaMax cost?",
-                a: "Watch CinemaMax on your smartphone, tablet, Smart TV, laptop, or streaming device, all for one fixed monthly fee. Plans range from $9.99 to $19.99 a month."
-              },
-              {
-                q: "Where can I watch?",
-                a: "Watch anywhere, anytime. Sign in with your CinemaMax account to watch instantly on the web or on any internet-connected device."
-              },
-              {
-                q: "What can I watch on CinemaMax?",
-                a: "CinemaMax has an extensive library of feature films, documentaries, TV shows, anime, award-winning originals, and more. Watch as much as you want, anytime you want."
-              }
-            ].map((faq, i) => (
-              <details key={i} className="bg-gray-900 rounded-lg group">
-                <summary className="flex justify-between items-center cursor-pointer p-6 text-white text-xl font-semibold hover:bg-gray-800 transition-colors">
-                  {faq.q}
-                  <ChevronRightIcon className="h-6 w-6 transform group-open:rotate-90 transition-transform" />
-                </summary>
-                <div className="px-6 pb-6 text-gray-400 text-lg">
-                  {faq.a}
-                </div>
-              </details>
+            {faqs.map((faq, index) => (
+              <div key={index} className="bg-gray-900 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                  className="w-full flex items-center justify-between p-6 text-left hover:bg-gray-800 transition-colors"
+                >
+                  <span className="text-xl font-semibold text-white">
+                    {faq.question}
+                  </span>
+                  {openFaq === index ? (
+                    <ChevronUpIcon className="h-6 w-6 text-white flex-shrink-0" />
+                  ) : (
+                    <ChevronDownIcon className="h-6 w-6 text-white flex-shrink-0" />
+                  )}
+                </button>
+                {openFaq === index && (
+                  <div className="px-6 pb-6">
+                    <p className="text-gray-300 text-lg">{faq.answer}</p>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
       </div>
 
       {/* Final CTA */}
-      <div className="bg-black border-t border-gray-900 py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Ready to watch? Enter your email to create or restart your membership.
+      <div className="py-20 bg-gradient-to-t from-gray-900 to-black">
+        <div className="max-w-4xl mx-auto px-8 text-center">
+          <h2 className="text-4xl font-bold text-white mb-6">
+            Ready to watch? Get started today.
           </h2>
-          <form onSubmit={handleGetStarted} className="max-w-2xl mx-auto">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
-                className="flex-1 px-6 py-4 rounded-lg bg-white/10 backdrop-blur-sm border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent text-lg"
-              />
-              <button
-                type="submit"
-                className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-lg"
-              >
-                <span>Get Started</span>
-                <ChevronRightIcon className="h-5 w-5" />
-              </button>
-            </div>
-          </form>
+          <p className="text-xl text-gray-300 mb-8">
+            Join millions of movie lovers on CinemaMax
+          </p>
+          <Link
+            href="/auth/signup"
+            className="inline-block bg-red-600 hover:bg-red-700 text-white text-xl font-bold py-4 px-12 rounded-lg transition-all transform hover:scale-105 shadow-2xl"
+          >
+            Start Your Free Trial
+          </Link>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="bg-black border-t border-gray-900 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+      <footer className="bg-black border-t border-gray-800 py-12">
+        <div className="max-w-7xl mx-auto px-8">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h3 className="text-white font-semibold mb-4">Company</h3>
+              <h4 className="text-white font-bold mb-4">Company</h4>
               <ul className="space-y-2">
-                <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Careers</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Press</Link></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">About Us</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Careers</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Press</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="text-white font-semibold mb-4">Support</h3>
+              <h4 className="text-white font-bold mb-4">Support</h4>
               <ul className="space-y-2">
-                <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Help Center</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Contact Us</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">FAQ</Link></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Help Center</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Contact Us</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">FAQ</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="text-white font-semibold mb-4">Legal</h3>
+              <h4 className="text-white font-bold mb-4">Legal</h4>
               <ul className="space-y-2">
-                <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Cookie Preferences</Link></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Privacy Policy</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Terms of Service</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Cookie Policy</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="text-white font-semibold mb-4">Social</h3>
+              <h4 className="text-white font-bold mb-4">Follow Us</h4>
               <ul className="space-y-2">
-                <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Facebook</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Twitter</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition-colors">Instagram</Link></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Facebook</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Twitter</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Instagram</a></li>
               </ul>
             </div>
           </div>
-
-          <div className="border-t border-gray-800 pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="flex items-center space-x-2 mb-4 md:mb-0">
-                <FilmIcon className="h-8 w-8 text-red-600" />
-                <span className="text-2xl font-bold text-red-600">CinemaMax</span>
-              </div>
-              <div className="text-gray-400 text-sm">
-                © 2026 CinemaMax, Inc. All rights reserved.
-              </div>
-            </div>
+          <div className="border-t border-gray-800 pt-8 text-center">
+            <p className="text-gray-500">
+              © 2026 CinemaMax. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
-
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-fade-in {
-          animation: fade-in 1s ease-out;
-        }
-
-        .animate-fade-in-delay {
-          animation: fade-in 1s ease-out 0.3s both;
-        }
-
-        .animate-fade-in-delay-2 {
-          animation: fade-in 1s ease-out 0.6s both;
-        }
-      `}</style>
     </div>
   )
 }
