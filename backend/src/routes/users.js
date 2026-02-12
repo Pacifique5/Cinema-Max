@@ -40,14 +40,16 @@ const verifyUser = async (req, res, next) => {
 // Get user profile
 router.get('/profile', verifyUser, async (req, res) => {
   try {
-    res.json({
-      id: req.user.id,
-      username: req.user.username,
-      email: req.user.email,
-      first_name: req.user.first_name,
-      last_name: req.user.last_name,
-      role: req.user.role
-    });
+    const result = await query(
+      'SELECT id, username, email, first_name, last_name, role, profile_image, created_at FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(result.rows[0]);
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -57,23 +59,27 @@ router.get('/profile', verifyUser, async (req, res) => {
 // Update user profile
 router.put('/profile', verifyUser, async (req, res) => {
   try {
-    const { first_name, last_name, email } = req.body;
+    const { first_name, last_name, email, profile_image } = req.body;
     
     const updates = [];
     const values = [];
     let paramCount = 1;
 
-    if (first_name) {
+    if (first_name !== undefined) {
       updates.push(`first_name = $${paramCount++}`);
       values.push(first_name);
     }
-    if (last_name) {
+    if (last_name !== undefined) {
       updates.push(`last_name = $${paramCount++}`);
       values.push(last_name);
     }
-    if (email) {
+    if (email !== undefined) {
       updates.push(`email = $${paramCount++}`);
       values.push(email);
+    }
+    if (profile_image !== undefined) {
+      updates.push(`profile_image = $${paramCount++}`);
+      values.push(profile_image);
     }
 
     if (updates.length === 0) {
@@ -88,7 +94,7 @@ router.put('/profile', verifyUser, async (req, res) => {
       UPDATE users 
       SET ${updates.join(', ')}
       WHERE id = $${paramCount}
-      RETURNING id, username, email, first_name, last_name, role, updated_at
+      RETURNING id, username, email, first_name, last_name, role, profile_image, updated_at
     `, values);
 
     res.json(result.rows[0]);
