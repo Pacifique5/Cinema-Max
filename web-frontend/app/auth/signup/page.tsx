@@ -18,6 +18,21 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate all fields are filled
+    if (!formData.firstName || !formData.lastName || !formData.username || !formData.email || !formData.password) {
+      alert('Please fill in all fields')
+      return
+    }
+    
+    console.log('Submitting signup with data:', {
+      username: formData.username,
+      email: formData.email,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      passwordLength: formData.password.length
+    })
+    
     setLoading(true)
     try {
       await signup(formData.username, formData.email, formData.password, formData.firstName, formData.lastName)

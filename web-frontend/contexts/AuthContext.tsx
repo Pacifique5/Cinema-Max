@@ -47,15 +47,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (token) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/user`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         })
 
         if (response.ok) {
-          const userData = await response.json()
-          setUser(userData)
+          const data = await response.json()
+          setUser(data.user)
         } else {
           localStorage.removeItem('token')
         }
@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -98,6 +98,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signup = async (username: string, email: string, password: string, firstName: string, lastName: string) => {
     try {
+      const name = `${firstName} ${lastName}`.trim()
+      
+      console.log('Sending signup request:', {
+        username,
+        email,
+        name,
+        passwordLength: password.length
+      })
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signup`, {
         method: 'POST',
         headers: {
@@ -107,12 +116,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           username,
           email,
           password,
-          first_name: firstName,
-          last_name: lastName
+          name
         })
       })
 
+      console.log('Signup response status:', response.status)
       const data = await response.json()
+      console.log('Signup response data:', data)
 
       if (response.ok) {
         localStorage.setItem('token', data.token)
@@ -126,6 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(data.error)
       }
     } catch (error: any) {
+      console.error('Signup error details:', error)
       toast.error(error.message || 'Signup failed')
       throw error
     }

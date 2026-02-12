@@ -23,7 +23,20 @@ router.post('/signup', async (req, res) => {
   try {
     const { email, password, name, username } = req.body;
 
+    console.log('Signup request received:', {
+      email,
+      username,
+      name,
+      hasPassword: !!password
+    });
+
     if (!email || !password || !name || !username) {
+      console.log('Validation failed - missing fields:', {
+        hasEmail: !!email,
+        hasPassword: !!password,
+        hasName: !!name,
+        hasUsername: !!username
+      });
       return res.status(400).json({ error: 'Email, password, name, and username are required' });
     }
 
@@ -34,6 +47,7 @@ router.post('/signup', async (req, res) => {
     );
 
     if (existingUser.rows.length > 0) {
+      console.log('User already exists');
       return res.status(400).json({ error: 'User with this email or username already exists' });
     }
 
@@ -45,6 +59,8 @@ router.post('/signup', async (req, res) => {
     const firstName = nameParts[0];
     const lastName = nameParts.slice(1).join(' ') || '';
 
+    console.log('Creating user:', { username, email, firstName, lastName });
+
     // Create user
     const result = await query(`
       INSERT INTO users (username, email, password_hash, first_name, last_name, role)
@@ -54,6 +70,8 @@ router.post('/signup', async (req, res) => {
 
     const user = result.rows[0];
     const token = generateToken(user);
+
+    console.log('User created successfully:', user.id);
 
     res.status(201).json({
       message: 'User created successfully',
